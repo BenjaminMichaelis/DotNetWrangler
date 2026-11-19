@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/MakeConst.Analyzers/MakeConst.Analyzers.csproj" />
+  <Project Path="src/MakeConst.CodeFixes/MakeConst.CodeFixes.csproj" />
+  <Project Path="tests/MakeConst.Tests/MakeConst.Tests.csproj" />
+</Solution>
