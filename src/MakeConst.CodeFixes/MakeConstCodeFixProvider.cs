@@ -6,14 +6,15 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Rename;
+using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace MakeConst.CodeFixes;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MakeConstCodeFixProvider)), Shared]
 public sealed class MakeConstCodeFixProvider : CodeFixProvider
 {
-    private const string Title = "Make type name uppercase";
+    private const string Title = "Make constant";
 
     public override ImmutableArray<string> FixableDiagnosticIds => [MakeConstAnalyzer.DiagnosticId];
 
@@ -25,18 +26,14 @@ public sealed class MakeConstCodeFixProvider : CodeFixProvider
             ?? throw new InvalidOperationException("The document has no syntax root.");
 
         Diagnostic diagnostic = context.Diagnostics[0];
-        SyntaxNode node = root.FindNode(diagnostic.Location.SourceSpan);
-        TypeDeclarationSyntax? declaration = node.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        LocalDeclarationStatementSyntax? declaration = root
+            .FindToken(diagnostic.Location.SourceSpan.Start)
+            .Parent?
+            .AncestorsAndSelf()
+            .OfType<LocalDeclarationStatementSyntax>()
+            .FirstOrDefault();
 
         if (declaration is null)
-        {
-            return;
-        }
-
-        SemanticModel semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("The document has no semantic model.");
-        INamedTypeSymbol? symbol = semanticModel.GetDeclaredSymbol(declaration, context.CancellationToken);
-        if (symbol is null)
         {
             return;
         }
@@ -44,24 +41,62 @@ public sealed class MakeConstCodeFixProvider : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: Title,
-                createChangedSolution: cancellationToken => RenameTypeAsync(
+                createChangedDocument: cancellationToken => MakeConstAsync(
                     context.Document,
-                    symbol,
+                    declaration,
                     cancellationToken),
                 equivalenceKey: Title),
             diagnostic);
     }
 
-    private static Task<Solution> RenameTypeAsync(
+    private static async Task<Document> MakeConstAsync(
         Document document,
-        INamedTypeSymbol typeSymbol,
+        LocalDeclarationStatementSyntax localDeclaration,
         CancellationToken cancellationToken)
     {
-        return Renamer.RenameSymbolAsync(
-            document.Project.Solution,
-            typeSymbol,
-            typeSymbol.Name.ToUpperInvariant(),
-            document.Project.Solution.Workspace.Options,
-            cancellationToken);
+        SyntaxToken firstToken = localDeclaration.GetFirstToken();
+        SyntaxTriviaList leadingTrivia = firstToken.LeadingTrivia;
+        LocalDeclarationStatementSyntax trimmedLocal = localDeclaration.ReplaceToken(
+            firstToken,
+            firstToken.WithLeadingTrivia(SyntaxTriviaList.Empty));
+
+        SyntaxToken constToken = SyntaxFactory.Token(
+            leadingTrivia,
+            SyntaxKind.ConstKeyword,
+            SyntaxFactory.TriviaList(SyntaxFactory.ElasticMarker));
+        SyntaxTokenList newModifiers = trimmedLocal.Modifiers.Insert(0, constToken);
+        VariableDeclarationSyntax variableDeclaration = localDeclaration.Declaration;
+        TypeSyntax variableTypeName = variableDeclaration.Type;
+
+        if (variableTypeName.IsVar)
+        {
+            SemanticModel semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("The document has no semantic model.");
+
+            IAliasSymbol? aliasInfo = semanticModel.GetAliasInfo(variableTypeName, cancellationToken);
+            if (aliasInfo is null)
+            {
+                ITypeSymbol? type = semanticModel.GetTypeInfo(variableTypeName, cancellationToken).ConvertedType;
+                if (type is not null && type.Name != "var")
+                {
+                    TypeSyntax typeName = SyntaxFactory.ParseTypeName(
+                            type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+                        .WithLeadingTrivia(variableTypeName.GetLeadingTrivia())
+                        .WithTrailingTrivia(variableTypeName.GetTrailingTrivia());
+                    variableDeclaration = variableDeclaration.WithType(
+                        typeName.WithAdditionalAnnotations(Simplifier.Annotation));
+                }
+            }
+        }
+
+        LocalDeclarationStatementSyntax formattedLocal = trimmedLocal
+            .WithModifiers(newModifiers)
+            .WithDeclaration(variableDeclaration)
+            .WithAdditionalAnnotations(Formatter.Annotation);
+
+        SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("The document has no syntax root.");
+        SyntaxNode newRoot = oldRoot.ReplaceNode(localDeclaration, formattedLocal);
+        return document.WithSyntaxRoot(newRoot);
     }
 }

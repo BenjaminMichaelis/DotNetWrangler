@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace MakeConst.Analyzers;
@@ -10,11 +10,11 @@ namespace MakeConst.Analyzers;
 public sealed class MakeConstAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "MAKECONST001";
-    private const string Category = "Naming";
+    private const string Category = "Usage";
 
-    private static readonly LocalizableString Title = "Type name contains lowercase letters";
-    private static readonly LocalizableString MessageFormat = "Type name '{0}' contains lowercase letters";
-    private static readonly LocalizableString Description = "Type names should not contain lowercase letters.";
+    private static readonly LocalizableString Title = "Variable can be made constant";
+    private static readonly LocalizableString MessageFormat = "Variable '{0}' can be made constant";
+    private static readonly LocalizableString Description = "Variables that aren't modified should be made constants.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -31,17 +31,76 @@ public sealed class MakeConstAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+        context.RegisterSyntaxNodeAction(AnalyzeNode, SyntaxKind.LocalDeclarationStatement);
     }
 
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
     {
-        var typeSymbol = (INamedTypeSymbol)context.Symbol;
-        if (!typeSymbol.Name.Any(char.IsLower))
+        var localDeclaration = (LocalDeclarationStatementSyntax)context.Node;
+        if (localDeclaration.Modifiers.Any(SyntaxKind.ConstKeyword))
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, typeSymbol.Locations[0], typeSymbol.Name));
+        TypeSyntax variableTypeName = localDeclaration.Declaration.Type;
+        ITypeSymbol? variableType = context.SemanticModel
+            .GetTypeInfo(variableTypeName, context.CancellationToken)
+            .ConvertedType;
+        if (variableType is null)
+        {
+            return;
+        }
+
+        foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
+        {
+            EqualsValueClauseSyntax? initializer = variable.Initializer;
+            if (initializer is null)
+            {
+                return;
+            }
+
+            Optional<object?> constantValue = context.SemanticModel
+                .GetConstantValue(initializer.Value, context.CancellationToken);
+            if (!constantValue.HasValue)
+            {
+                return;
+            }
+
+            Conversion conversion = context.SemanticModel.ClassifyConversion(initializer.Value, variableType);
+            if (!conversion.Exists || conversion.IsUserDefined)
+            {
+                return;
+            }
+
+            if (constantValue.Value is string)
+            {
+                if (variableType.SpecialType != SpecialType.System_String)
+                {
+                    return;
+                }
+            }
+            else if (variableType.IsReferenceType && constantValue.Value is not null)
+            {
+                return;
+            }
+        }
+
+        DataFlowAnalysis? dataFlowAnalysis = context.SemanticModel.AnalyzeDataFlow(localDeclaration);
+        if (dataFlowAnalysis is null || !dataFlowAnalysis.Succeeded)
+        {
+            return;
+        }
+
+        foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
+        {
+            ISymbol? variableSymbol = context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken);
+            if (variableSymbol is null || dataFlowAnalysis.WrittenOutside.Contains(variableSymbol))
+            {
+                return;
+            }
+        }
+
+        string variableName = localDeclaration.Declaration.Variables[0].Identifier.ValueText;
+        context.ReportDiagnostic(Diagnostic.Create(Rule, localDeclaration.GetLocation(), variableName));
     }
 }

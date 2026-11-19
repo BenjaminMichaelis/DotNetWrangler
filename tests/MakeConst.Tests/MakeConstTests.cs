@@ -14,14 +14,15 @@ namespace MakeConst.Tests;
 public sealed class MakeConstTests
 {
     [TestMethod]
-    public async Task LowercaseTypeName_IsRenamedToUppercase()
+    public async Task LocalIntCouldBeConstant_AddsConst()
     {
         const string source = """
-            class program
+            class Program
             {
                 static void Main()
                 {
-                    var value = new program();
+                    int value = 0;
+                    System.Console.WriteLine(value);
                 }
             }
             """;
@@ -30,10 +31,147 @@ public sealed class MakeConstTests
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
         Assert.AreEqual(1, diagnostics.Length);
 
+        string fixedCode = await ApplyFirstCodeFixAsync(document, diagnostics[0]);
+        StringAssert.Contains(fixedCode, "const int value = 0;");
+    }
+
+    [TestMethod]
+    public async Task VarStringCouldBeConstant_ReplacesVarWithInferredType()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    var value = "text";
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(1, diagnostics.Length);
+
+        string fixedCode = await ApplyFirstCodeFixAsync(document, diagnostics[0]);
+        StringAssert.Contains(fixedCode, "const string value = \"text\";");
+    }
+
+    [TestMethod]
+    public async Task ReassignedVariable_DoesNotReportDiagnostic()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    int value = 0;
+                    value++;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(0, diagnostics.Length);
+    }
+
+    [TestMethod]
+    public async Task AlreadyConstant_DoesNotReportDiagnostic()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    const int value = 0;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(0, diagnostics.Length);
+    }
+
+    [TestMethod]
+    public async Task DeclarationWithoutInitializer_DoesNotReportDiagnostic()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    int value;
+                    value = 0;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(0, diagnostics.Length);
+    }
+
+    [TestMethod]
+    public async Task NonConstantInitializer_DoesNotReportDiagnostic()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    int value = System.DateTime.Now.Day;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(0, diagnostics.Length);
+    }
+
+    [TestMethod]
+    public async Task ObjectInitializedWithString_DoesNotReportDiagnostic()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    object value = "text";
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(0, diagnostics.Length);
+    }
+
+    [TestMethod]
+    public async Task MultipleVariablesWithNonConstantInitializer_DoesNotReportDiagnostic()
+    {
+        const string source = """
+            class Program
+            {
+                static void Main()
+                {
+                    int first = 0, second = System.DateTime.Now.Day;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(0, diagnostics.Length);
+    }
+
+    private static async Task<string> ApplyFirstCodeFixAsync(Document document, Diagnostic diagnostic)
+    {
         var actions = new List<CodeAction>();
         var context = new CodeFixContext(
             document,
-            diagnostics[0],
+            diagnostic,
             (action, _) => actions.Add(action),
             CancellationToken.None);
         await new MakeConstCodeFixProvider().RegisterCodeFixesAsync(context);
@@ -43,27 +181,7 @@ public sealed class MakeConstTests
         ApplyChangesOperation change = operations.OfType<ApplyChangesOperation>().Single();
         Document changedDocument = change.ChangedSolution.GetDocument(document.Id)
             ?? throw new InvalidOperationException("The code fix removed the document.");
-        string fixedCode = (await changedDocument.GetTextAsync()).ToString().Trim();
-
-        Assert.AreEqual(
-            """
-            class PROGRAM
-            {
-                static void Main()
-                {
-                    var value = new PROGRAM();
-                }
-            }
-            """,
-            fixedCode);
-    }
-
-    [TestMethod]
-    public async Task UppercaseTypeName_HasNoDiagnostic()
-    {
-        using AdhocWorkspace workspace = CreateWorkspace("class PROGRAM { }", out Document document);
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        return (await changedDocument.GetTextAsync()).ToString();
     }
 
     private static AdhocWorkspace CreateWorkspace(string source, out Document document)

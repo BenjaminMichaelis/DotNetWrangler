@@ -1,8 +1,8 @@
-# Analyzer with code fix template
+# MakeConst analyzer template
 
-A Roslyn analyzer starter solution based on the Visual Studio **Analyzer with Code Fix** template.
-The sample analyzer reports type names containing lowercase letters, and its code fix
-renames the type and its references to uppercase.
+A Roslyn analyzer and code-fix solution based on the [Microsoft tutorial](https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix).
+The analyzer reports local variable declarations that can be declared `const`;
+the code fix inserts `const` and replaces `var` with the inferred type when needed.
 
 ## Projects
 
@@ -15,6 +15,3 @@ renames the type and its references to uppercase.
 ```shell
 dotnet test DotnetBotWranglers.sln
 ```
-
-The [Microsoft tutorial](https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix)
-uses this template to build a MakeConst analyzer.
