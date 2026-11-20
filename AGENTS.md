@@ -59,9 +59,10 @@ dotnet test DotnetBotWranglers.sln
 ```
 
 - Check IDs, counts, relevant message arguments, and diagnostic spans as appropriate, not just whether any diagnostic exists.
+- Assert observable requirements rather than incidental analyzer behavior or code-fix formatting. Validate code fixes with compilation diagnostics and semantic symbols, including preserved types, values, and uses.
 - Ensure input compilations are free of unintended compiler errors. Use explicit references or separately compiled framework stubs so the test host's assemblies cannot accidentally determine framework detection.
 - For null-forgiving changes, cover relevant reference/value-type and generic-constraint cases, framework detection/fallbacks, and async/unsafe boundaries. Compile recommendations or replacements when their syntax or legality is in question.
-- Preserve the scoped pragma regression, including warning restoration. Use `AnalyzerConfigurationTests.cs` to verify actual `.editorconfig` behavior for each rule, rather than only checking descriptor constants.
+- Preserve the scoped pragma regression, including warning restoration. Use `AnalyzerConfigurationTests.cs` to verify actual `.editorconfig` behavior with peer rules enabled and `none`, `warning`, and `error` severities, rather than only checking descriptor constants.
 - Keep code-fix tests alongside analyzer tests and verify resulting code. Run the smallest relevant test set, expanding when shared behavior changes or failures require it. Documentation-only changes do not require a build or test run.
 
 ## Reference material

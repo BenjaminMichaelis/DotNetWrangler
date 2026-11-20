@@ -13,12 +13,16 @@ public sealed class AnalyzerConfigurationTests
     [TestMethod]
     [DataRow("WR0001", "none")]
     [DataRow("WR0001", "warning")]
+    [DataRow("WR0001", "error")]
     [DataRow("WR0002", "none")]
     [DataRow("WR0002", "warning")]
+    [DataRow("WR0002", "error")]
     [DataRow("WR0003", "none")]
     [DataRow("WR0003", "warning")]
+    [DataRow("WR0003", "error")]
     [DataRow("WR0004", "none")]
     [DataRow("WR0004", "warning")]
+    [DataRow("WR0004", "error")]
     public async Task EditorConfig_ConfiguresEachRuleIndependently(string ruleId, string severity)
     {
         const string source = """
@@ -49,7 +53,7 @@ public sealed class AnalyzerConfigurationTests
         string[] ruleIds = ["WR0001", "WR0002", "WR0003", "WR0004"];
         string editorConfig = "root = true\n\n[*.cs]\n" + string.Join(
             "\n",
-            ruleIds.Select(id => $"dotnet_diagnostic.{id}.severity = {(id == ruleId ? severity : "none")}"));
+            ruleIds.Select(id => $"dotnet_diagnostic.{id}.severity = {(id == ruleId ? severity : "warning")}"));
         string trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string
             ?? throw new InvalidOperationException("The runtime did not provide trusted platform assemblies.");
         string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)
@@ -97,15 +101,34 @@ public sealed class AnalyzerConfigurationTests
                 project.AnalyzerOptions)
             .GetAnalyzerDiagnosticsAsync();
 
-        if (severity == "none")
+        string[] expectedIds = ruleIds
+            .Where(id => id != ruleId || severity != "none")
+            .ToArray();
+        Assert.AreEqual(expectedIds.Length, diagnostics.Length);
+        foreach (string expectedId in expectedIds)
         {
-            Assert.AreEqual(0, diagnostics.Length);
-        }
-        else
-        {
-            Assert.AreEqual(1, diagnostics.Length);
-            Assert.AreEqual(ruleId, diagnostics[0].Id);
-            Assert.AreEqual(DiagnosticSeverity.Warning, diagnostics[0].Severity);
+            Diagnostic diagnostic = Assert.ContainsSingle(diagnostics.Where(item => item.Id == expectedId));
+            DiagnosticSeverity expectedSeverity = expectedId == ruleId && severity == "error"
+                ? DiagnosticSeverity.Error
+                : DiagnosticSeverity.Warning;
+            Assert.AreEqual(expectedSeverity, diagnostic.Severity);
+
+            string construct = expectedId switch
+            {
+                "WR0001" => "int answer = 42;",
+                "WR0002" => "name!",
+                "WR0003" => "null!",
+                "WR0004" => "Name!",
+                _ => throw new InvalidOperationException($"Unexpected diagnostic ID '{expectedId}'."),
+            };
+            var expectedSpan = new TextSpan(source.IndexOf(construct, StringComparison.Ordinal), construct.Length);
+            Assert.IsTrue(diagnostic.Location.SourceSpan.Length > 0);
+            Assert.IsTrue(expectedSpan.Contains(diagnostic.Location.SourceSpan));
+            Assert.AreEqual(compilation.SyntaxTrees.Single(), diagnostic.Location.SourceTree);
+            if (expectedId == "WR0001")
+            {
+                StringAssert.Contains(diagnostic.GetMessage(), "answer");
+            }
         }
     }
 }

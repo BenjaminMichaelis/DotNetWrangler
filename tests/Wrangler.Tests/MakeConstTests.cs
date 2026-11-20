@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -31,8 +32,7 @@ public sealed class MakeConstTests
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
         Assert.AreEqual(1, diagnostics.Length);
 
-        string fixedCode = await ApplyFirstCodeFixAsync(document, diagnostics[0]);
-        StringAssert.Contains(fixedCode, "const int value = 0;");
+        await AssertCodeFixAsync(document, diagnostics[0], SpecialType.System_Int32, 0);
     }
 
     [TestMethod]
@@ -52,8 +52,7 @@ public sealed class MakeConstTests
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
         Assert.AreEqual(1, diagnostics.Length);
 
-        string fixedCode = await ApplyFirstCodeFixAsync(document, diagnostics[0]);
-        StringAssert.Contains(fixedCode, "const string value = \"text\";");
+        await AssertCodeFixAsync(document, diagnostics[0], SpecialType.System_String, "text");
     }
 
     [TestMethod]
@@ -149,7 +148,7 @@ public sealed class MakeConstTests
     }
 
     [TestMethod]
-    public async Task MultipleVariablesWithNonConstantInitializer_DoesNotReportDiagnostic()
+    public async Task MultipleVariablesWithNonConstantInitializer_DoesNotProduceInvalidCodeFix()
     {
         const string source = """
             class Program
@@ -157,16 +156,89 @@ public sealed class MakeConstTests
                 static void Main()
                 {
                     int first = 0, second = System.DateTime.Now.Day;
+                    System.Console.WriteLine(first + second);
                 }
             }
             """;
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.GetMessage().Contains("'second'", StringComparison.Ordinal)));
+
+        SyntaxNode originalRoot = await document.GetSyntaxRootAsync()
+            ?? throw new InvalidOperationException("The document has no syntax root.");
+        VariableDeclaratorSyntax originalSecond = originalRoot.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .Single(variable => variable.Identifier.ValueText == "second");
+        ExpressionSyntax originalInitializer = originalSecond.Initializer?.Value
+            ?? throw new InvalidOperationException("The original runtime-valued variable has no initializer.");
+        ExpressionStatementSyntax originalUse = originalRoot.DescendantNodes().OfType<ExpressionStatementSyntax>().Single();
+
+        foreach (Diagnostic diagnostic in diagnostics)
+        {
+            Assert.AreEqual(MakeConstAnalyzer.DiagnosticId, diagnostic.Id);
+            Document changedDocument = await ApplyFirstCodeFixAsync(document, diagnostic);
+            Assert.AreEqual(0, (await GetAnalyzerDiagnosticsAsync(changedDocument)).Length);
+
+            SyntaxNode changedRoot = await changedDocument.GetSyntaxRootAsync()
+                ?? throw new InvalidOperationException("The fixed document has no syntax root.");
+            SemanticModel semanticModel = await changedDocument.GetSemanticModelAsync()
+                ?? throw new InvalidOperationException("The fixed document has no semantic model.");
+            VariableDeclaratorSyntax first = changedRoot.DescendantNodes()
+                .OfType<VariableDeclaratorSyntax>()
+                .Single(variable => variable.Identifier.ValueText == "first");
+            VariableDeclaratorSyntax second = changedRoot.DescendantNodes()
+                .OfType<VariableDeclaratorSyntax>()
+                .Single(variable => variable.Identifier.ValueText == "second");
+            ILocalSymbol firstSymbol = Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(first));
+            ILocalSymbol secondSymbol = Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(second));
+            Assert.IsTrue(firstSymbol.IsConst);
+            Assert.AreEqual(0, firstSymbol.ConstantValue);
+            Assert.IsFalse(secondSymbol.IsConst);
+            ExpressionSyntax changedInitializer = second.Initializer?.Value
+                ?? throw new InvalidOperationException("The fixed runtime-valued variable has no initializer.");
+            Assert.IsTrue(originalInitializer.IsEquivalentTo(changedInitializer));
+            Assert.IsTrue(originalUse.IsEquivalentTo(changedRoot.DescendantNodes().OfType<ExpressionStatementSyntax>().Single()));
+        }
     }
 
-    private static async Task<string> ApplyFirstCodeFixAsync(Document document, Diagnostic diagnostic)
+    private static async Task AssertCodeFixAsync(
+        Document document,
+        Diagnostic diagnostic,
+        SpecialType expectedType,
+        object expectedValue)
+    {
+        SyntaxNode originalRoot = await document.GetSyntaxRootAsync()
+            ?? throw new InvalidOperationException("The document has no syntax root.");
+        LocalDeclarationStatementSyntax originalDeclaration = originalRoot.DescendantNodes()
+            .OfType<LocalDeclarationStatementSyntax>()
+            .Single();
+        VariableDeclaratorSyntax originalVariable = originalDeclaration.Declaration.Variables.Single();
+        Assert.AreEqual(MakeConstAnalyzer.DiagnosticId, diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), originalVariable.Identifier.ValueText);
+        Assert.AreEqual(originalRoot.SyntaxTree, diagnostic.Location.SourceTree);
+        Assert.IsTrue(diagnostic.Location.SourceSpan.Length > 0);
+        Assert.IsTrue(originalDeclaration.Span.Contains(diagnostic.Location.SourceSpan));
+
+        Document changedDocument = await ApplyFirstCodeFixAsync(document, diagnostic);
+        Assert.AreEqual(0, (await GetAnalyzerDiagnosticsAsync(changedDocument)).Length);
+        SyntaxNode changedRoot = await changedDocument.GetSyntaxRootAsync()
+            ?? throw new InvalidOperationException("The fixed document has no syntax root.");
+        LocalDeclarationStatementSyntax changedDeclaration = changedRoot.DescendantNodes()
+            .OfType<LocalDeclarationStatementSyntax>()
+            .Single();
+        VariableDeclaratorSyntax changedVariable = changedDeclaration.Declaration.Variables.Single();
+        Assert.AreEqual(originalVariable.Identifier.ValueText, changedVariable.Identifier.ValueText);
+        SemanticModel semanticModel = await changedDocument.GetSemanticModelAsync()
+            ?? throw new InvalidOperationException("The fixed document has no semantic model.");
+        ILocalSymbol symbol = Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(changedVariable));
+        Assert.IsTrue(symbol.IsConst);
+        Assert.AreEqual(expectedType, symbol.Type.SpecialType);
+        Assert.AreEqual(expectedValue, symbol.ConstantValue);
+        Assert.IsTrue(originalRoot.IsEquivalentTo(changedRoot.ReplaceNode(changedDeclaration, originalDeclaration)));
+    }
+
+    private static async Task<Document> ApplyFirstCodeFixAsync(Document document, Diagnostic diagnostic)
     {
         var actions = new List<CodeAction>();
         var context = new CodeFixContext(
@@ -175,13 +247,12 @@ public sealed class MakeConstTests
             (action, _) => actions.Add(action),
             CancellationToken.None);
         await new MakeConstCodeFixProvider().RegisterCodeFixesAsync(context);
-        Assert.AreEqual(1, actions.Count);
+        Assert.IsTrue(actions.Count > 0, "No code fix was registered for the diagnostic.");
 
         IEnumerable<CodeActionOperation> operations = await actions[0].GetOperationsAsync(CancellationToken.None);
         ApplyChangesOperation change = operations.OfType<ApplyChangesOperation>().Single();
-        Document changedDocument = change.ChangedSolution.GetDocument(document.Id)
+        return change.ChangedSolution.GetDocument(document.Id)
             ?? throw new InvalidOperationException("The code fix removed the document.");
-        return (await changedDocument.GetTextAsync()).ToString();
     }
 
     private static AdhocWorkspace CreateWorkspace(string source, out Document document)
@@ -222,6 +293,10 @@ public sealed class MakeConstTests
     {
         Compilation compilation = await document.Project.GetCompilationAsync()
             ?? throw new InvalidOperationException("Could not create the test compilation.");
+        Diagnostic[] errors = compilation.GetDiagnostics()
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        Assert.AreEqual(0, errors.Length, string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString())));
         return await compilation
             .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new MakeConstAnalyzer()))
             .GetAnalyzerDiagnosticsAsync();
