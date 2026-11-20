@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
-using MakeConst.Analyzers;
+using Wrangler.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
 
-namespace MakeConst.CodeFixes;
+namespace Wrangler.CodeFixes;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MakeConstCodeFixProvider)), Shared]
 public sealed class MakeConstCodeFixProvider : CodeFixProvider

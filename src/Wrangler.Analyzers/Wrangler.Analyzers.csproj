@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MakeConst.Analyzers</AssemblyName>
-    <RootNamespace>MakeConst.Analyzers</RootNamespace>
+    <AssemblyName>Wrangler.Analyzers</AssemblyName>
+    <RootNamespace>Wrangler.Analyzers</RootNamespace>
     <IsPackable>false</IsPackable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>

@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
-using MakeConst.Analyzers;
-using MakeConst.CodeFixes;
+using Wrangler.Analyzers;
+using Wrangler.CodeFixes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
-namespace MakeConst.Tests;
+namespace Wrangler.Tests;
 
 [TestClass]
 public sealed class MakeConstTests

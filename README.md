@@ -1,14 +1,20 @@
-# MakeConst analyzer template
+# Wrangler analyzers
 
-A Roslyn analyzer and code-fix solution based on the [Microsoft tutorial](https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix).
-The analyzer reports local variable declarations that can be declared `const`;
-the code fix inserts `const` and replaces `var` with the inferred type when needed.
+Roslyn analyzers that put guardrails on .NET code.
+
+## Rules
+
+Rule ID | Category | Description
+--------|----------|------------
+WR0001 | Usage | Local variables that are never modified should be `const` (code fix available).
+WR0002 | Reliability | The null-forgiving operator (`!`) overrides the compiler's nullable analysis. Handle null explicitly, use nullable attributes, or assert in tests; suppress with a justification only when you can prove the value is non-null.
+WR0003 | Reliability | `null!` / `default!` fabricate a non-null value. Make the member nullable, `required`, or initialize it with a real value instead of an arbitrary default.
 
 ## Projects
 
-- `src/MakeConst.Analyzers` contains the diagnostic analyzer and targets .NET Standard 2.0.
-- `src/MakeConst.CodeFixes` contains the code fix provider and targets .NET Standard 2.0.
-- `tests/MakeConst.Tests` contains analyzer and code-fix tests.
+- `src/Wrangler.Analyzers` contains the diagnostic analyzers and targets .NET Standard 2.0.
+- `src/Wrangler.CodeFixes` contains the code fix providers and targets .NET Standard 2.0.
+- `tests/Wrangler.Tests` contains analyzer and code-fix tests.
 
 ## Build and test
 

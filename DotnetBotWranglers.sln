@@ -2,11 +2,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakeConst.Analyzers", "src\MakeConst.Analyzers\MakeConst.Analyzers.csproj", "{46F9E538-72A9-4846-B566-5B0A1A7DD06A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wrangler.Analyzers", "src\Wrangler.Analyzers\Wrangler.Analyzers.csproj", "{46F9E538-72A9-4846-B566-5B0A1A7DD06A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakeConst.CodeFixes", "src\MakeConst.CodeFixes\MakeConst.CodeFixes.csproj", "{46B64C22-0488-4E2D-ACF0-C794C63C8C43}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wrangler.CodeFixes", "src\Wrangler.CodeFixes\Wrangler.CodeFixes.csproj", "{46B64C22-0488-4E2D-ACF0-C794C63C8C43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakeConst.Tests", "tests\MakeConst.Tests\MakeConst.Tests.csproj", "{DF9FE7CD-2828-4927-B9A0-EA1600B8EC05}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wrangler.Tests", "tests\Wrangler.Tests\Wrangler.Tests.csproj", "{DF9FE7CD-2828-4927-B9A0-EA1600B8EC05}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

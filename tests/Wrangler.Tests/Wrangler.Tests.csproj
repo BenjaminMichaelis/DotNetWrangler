@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MakeConst.Analyzers\MakeConst.Analyzers.csproj" />
-    <ProjectReference Include="..\..\src\MakeConst.CodeFixes\MakeConst.CodeFixes.csproj" />
+    <ProjectReference Include="..\..\src\Wrangler.Analyzers\Wrangler.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Wrangler.CodeFixes\Wrangler.CodeFixes.csproj" />
   </ItemGroup>
 </Project>
