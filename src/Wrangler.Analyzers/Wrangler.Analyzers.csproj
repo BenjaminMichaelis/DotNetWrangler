@@ -14,5 +14,6 @@
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    <InternalsVisibleTo Include="Wrangler.CodeFixes" />
   </ItemGroup>
 </Project>

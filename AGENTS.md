@@ -48,6 +48,14 @@ These are intentional product decisions, not false positives to silently exempt:
 - Only recommend TUnit's awaited assertions in a suitable async method, local function, or lambda. Respect the nearest function boundary and await-forbidden contexts. Check enclosing unsafe types, members, and blocks too; stopping at an async method can miss inherited unsafe context. Fall back to WR0002 rather than suggesting an illegal `await`.
 - Do not claim all assertions update compiler null-state. Nullable annotations, framework diagnostic suppressors, and capturing a validated return value are different mechanisms; multiple-assert blocks can also continue after a failed assertion.
 
+## Pragma documentation rules
+
+- WR0005 (IDs/titles) and WR0006 (justification) are independent opt-in rules. Preserve normal severity configuration and scoped suppression.
+- One suppressed ID needs only its title in the comment; multiple distinct IDs require labeled titles. Wrangler titles come from the invariant descriptors, not duplicated strings. Register new analyzer classes in `PragmaTitleCatalog` so their descriptors are included. Changing a title changes the accepted suppression text.
+- External titles default to presence-only validation; an optional `Wrangler.PragmaTitles.txt` catalog verifies supplied titles, and strict mode also requires mappings for unknown IDs. Keep compiler analysis independent of Workspaces; only code fixes may discover project analyzer descriptors.
+- A justification is an explicit, nonempty `Justification:` field on the pragma line or the immediately preceding standalone `//` line. Do not invent reasons, enforce their quality, or replace ambiguous free-text comments.
+- Report at the `disable` keyword, not the end token: that token already uses the new suppression state. Skip inactive/generated and incomplete directives; restoration pairing and `SuppressMessage` attributes are separate scope.
+
 ## Tests and verification
 
 Use the existing test harness and add focused regression cases for changed behavior. Test framework support in analyzed snippets does not require migrating this repository's own MSTest suite.

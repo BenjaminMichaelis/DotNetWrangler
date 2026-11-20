@@ -23,9 +23,18 @@ public sealed class AnalyzerConfigurationTests
     [DataRow("WR0004", "none")]
     [DataRow("WR0004", "warning")]
     [DataRow("WR0004", "error")]
+    [DataRow("WR0005", "none")]
+    [DataRow("WR0005", "warning")]
+    [DataRow("WR0005", "error")]
+    [DataRow("WR0006", "none")]
+    [DataRow("WR0006", "warning")]
+    [DataRow("WR0006", "error")]
     public async Task EditorConfig_ConfiguresEachRuleIndependently(string ruleId, string severity)
     {
         const string source = """
+            #pragma warning disable CS0168
+            #pragma warning restore CS0168
+
             class Person
             {
                 public string FirstName { get; set; } = null!;
@@ -50,7 +59,7 @@ public sealed class AnalyzerConfigurationTests
                 }
             }
             """;
-        string[] ruleIds = ["WR0001", "WR0002", "WR0003", "WR0004"];
+        string[] ruleIds = ["WR0001", "WR0002", "WR0003", "WR0004", "WR0005", "WR0006"];
         string editorConfig = "root = true\n\n[*.cs]\n" + string.Join(
             "\n",
             ruleIds.Select(id => $"dotnet_diagnostic.{id}.severity = {(id == ruleId ? severity : "warning")}"));
@@ -97,7 +106,7 @@ public sealed class AnalyzerConfigurationTests
 
         ImmutableArray<Diagnostic> diagnostics = await compilation
             .WithAnalyzers(
-                [new MakeConstAnalyzer(), new NullForgivingOperatorAnalyzer()],
+                [new MakeConstAnalyzer(), new NullForgivingOperatorAnalyzer(), new PragmaSuppressionAnalyzer()],
                 project.AnalyzerOptions)
             .GetAnalyzerDiagnosticsAsync();
 
@@ -119,6 +128,7 @@ public sealed class AnalyzerConfigurationTests
                 "WR0002" => "name!",
                 "WR0003" => "null!",
                 "WR0004" => "Name!",
+                "WR0005" or "WR0006" => "disable",
                 _ => throw new InvalidOperationException($"Unexpected diagnostic ID '{expectedId}'."),
             };
             var expectedSpan = new TextSpan(source.IndexOf(construct, StringComparison.Ordinal), construct.Length);
@@ -129,6 +139,67 @@ public sealed class AnalyzerConfigurationTests
             {
                 StringAssert.Contains(diagnostic.GetMessage(), "answer");
             }
+        }
+    }
+
+    [TestMethod]
+    [DataRow("none", "none", "valid")]
+    [DataRow("warning", "none", "valid")]
+    [DataRow("none", "warning", "valid")]
+    [DataRow("warning", "warning", "valid")]
+    [DataRow("none", "none", "invalid-mode")]
+    [DataRow("warning", "none", "invalid-mode")]
+    [DataRow("none", "warning", "invalid-mode")]
+    [DataRow("warning", "warning", "invalid-mode")]
+    [DataRow("none", "none", "invalid-catalog")]
+    [DataRow("warning", "none", "invalid-catalog")]
+    [DataRow("none", "warning", "invalid-catalog")]
+    [DataRow("warning", "warning", "invalid-catalog")]
+    public async Task PragmaPolicies_StayIndependentWhenConfigurationIsInvalid(
+        string titleSeverity, string reasonSeverity, string configuration)
+    {
+        string editorConfig = $"""
+            root = true
+            [*.cs]
+            dotnet_diagnostic.WR0005.severity = {titleSeverity}
+            dotnet_diagnostic.WR0006.severity = {reasonSeverity}
+            wrangler_pragma_title_validation = {(configuration == "invalid-mode" ? "unsupported" : "documented")}
+            """;
+        using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
+            "#pragma warning disable CONTOSO001", out Document document, editorConfig,
+            catalog: configuration == "invalid-catalog" ? "Invalid catalog" : null);
+        ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
+        Assert.AreEqual(titleSeverity == "none" ? 0 : 1, diagnostics.Count(diagnostic => diagnostic.Id == "WR0005"));
+        Assert.AreEqual(reasonSeverity == "none" ? 0 : 1, diagnostics.Count(diagnostic => diagnostic.Id == "WR0006"));
+        if (titleSeverity != "none" && configuration != "valid")
+        {
+            StringAssert.Contains(diagnostics.Single(diagnostic => diagnostic.Id == "WR0005").GetMessage(), "Invalid");
+        }
+    }
+
+    [TestMethod]
+    [DataRow("Test.cs", 0)]
+    [DataRow("Scoped.cs", 1)]
+    public async Task PragmaModeAndSeverity_HonorFileSpecificEditorConfigSections(string fileName, int expectedCount)
+    {
+        string editorConfig = PragmaTestHelper.EnabledConfig + """
+
+            wrangler_pragma_title_validation = documented
+
+            [Scoped.cs]
+            dotnet_diagnostic.WR0005.severity = error
+            wrangler_pragma_title_validation = StRiCt
+            """;
+        using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
+            "#pragma warning disable CONTOSO001 // A custom title; Justification: Intentional.",
+            out Document document, editorConfig, fileName: fileName);
+        ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
+        Assert.AreEqual(expectedCount, diagnostics.Length);
+        if (expectedCount > 0)
+        {
+            Assert.AreEqual("WR0005", diagnostics[0].Id);
+            Assert.AreEqual(DiagnosticSeverity.Error, diagnostics[0].Severity);
+            StringAssert.Contains(diagnostics[0].GetMessage(), "catalog entry");
         }
     }
 }
