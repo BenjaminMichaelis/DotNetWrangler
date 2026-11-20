@@ -8,7 +8,7 @@ Read the [documentation site](https://benjaminmichaelis.github.io/DotNetWrangler
 
 ## Start here
 
-- [Getting started](docs/getting-started.md): use the analyzers from source and understand the current distribution limits.
+- [Getting started](docs/getting-started.md): install the `DotNetWrangler.Analyzers` NuGet package or use the analyzers from source.
 - [Configuration](docs/configuration.md): choose severities and enable the optional pragma policies.
 - [Suppressing a diagnostic](docs/suppressions.md): document intentional exceptions without disabling a rule project-wide.
 - [Analyzer catalog](#analyzer-catalog): find a rule's explanation, examples, and code-fix availability.
@@ -70,12 +70,21 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 
 - `src/Wrangler.Analyzers` contains the diagnostic analyzers and targets .NET Standard 2.0.
 - `src/Wrangler.CodeFixes` contains the code fix providers and targets .NET Standard 2.0.
+- `src/Wrangler.Package` packs both assemblies into the `DotNetWrangler.Analyzers` NuGet package.
 - `tests/Wrangler.Tests` contains analyzer and code-fix tests.
 
 ## Build and test
 
 ```shell
 dotnet test DotNetWrangler.slnx
+```
+
+## Release
+
+Pushing a `vMAJOR.MINOR.PATCH[-prerelease]` tag runs the [publish workflow](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/.github/workflows/publish.yml). It tests the solution, packs with the tag's version, and pushes to nuget.org through [trusted publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) (no API key). Verify a package locally first:
+
+```shell
+dotnet pack src/Wrangler.Package/Wrangler.Package.csproj -c Release -o artifacts -p:Version=0.1.0
 ```
 
 See [maintaining the documentation](docs/publishing.md) to build, preview, customize, and publish the DocFX site.
