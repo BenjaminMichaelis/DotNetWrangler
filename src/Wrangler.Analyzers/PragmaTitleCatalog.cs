@@ -9,6 +9,8 @@ internal sealed class PragmaTitleCatalog(
     ImmutableDictionary<string, string> titles,
     string? error)
 {
+    private const string WranglerDiagnosticIdPrefix = "WRANGLER";
+
     internal const string FileName = "Wrangler.PragmaTitles.txt";
 
     internal ImmutableDictionary<string, string> Titles { get; } = titles;
@@ -66,7 +68,9 @@ internal sealed class PragmaTitleCatalog(
                     return InvalidAtLine($"The title for '{id}' is empty");
                 }
 
-                if (id.Length == 6 && id.StartsWith("WR", StringComparison.Ordinal) && id.Skip(2).All(char.IsDigit))
+                if (id.Length == WranglerDiagnosticIdPrefix.Length + 4
+                    && id.StartsWith(WranglerDiagnosticIdPrefix, StringComparison.Ordinal)
+                    && id.Skip(WranglerDiagnosticIdPrefix.Length).All(char.IsDigit))
                 {
                     return InvalidAtLine($"'{id}' is reserved for Wrangler's own descriptors");
                 }

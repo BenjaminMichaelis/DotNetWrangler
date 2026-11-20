@@ -11,9 +11,9 @@ namespace Wrangler.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NullForgivingOperatorAnalyzer : DiagnosticAnalyzer
 {
-    public const string NullForgivingOperatorDiagnosticId = "WR0002";
-    public const string FabricatedNonNullValueDiagnosticId = "WR0003";
-    public const string UseAssertionInTestsDiagnosticId = "WR0004";
+    public const string NullForgivingOperatorDiagnosticId = "WRANGLER0002";
+    public const string FabricatedNonNullValueDiagnosticId = "WRANGLER0003";
+    public const string UseAssertionInTestsDiagnosticId = "WRANGLER0004";
     private const string Category = "Reliability";
 
     private static readonly (string TestMethodAttributeMetadataName, string AssertTypeMetadataName, string Assertion, bool RequiresAwait)[] KnownTestFrameworks =

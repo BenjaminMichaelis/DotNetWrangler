@@ -9,7 +9,7 @@ namespace Wrangler.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MakeConstAnalyzer : DiagnosticAnalyzer
 {
-    public const string DiagnosticId = "WR0001";
+    public const string DiagnosticId = "WRANGLER0001";
     private const string Category = "Usage";
 
     private static readonly LocalizableString Title = "Variable can be made constant";

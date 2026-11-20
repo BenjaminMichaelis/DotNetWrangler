@@ -9,8 +9,8 @@ namespace Wrangler.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PragmaSuppressionAnalyzer : DiagnosticAnalyzer
 {
-    public const string TitleDiagnosticId = "WR0005";
-    public const string JustificationDiagnosticId = "WR0006";
+    public const string TitleDiagnosticId = "WRANGLER0005";
+    public const string JustificationDiagnosticId = "WRANGLER0006";
     internal const string TitleValidationOption = "wrangler_pragma_title_validation";
 
     internal static readonly DiagnosticDescriptor TitleRule = new(
