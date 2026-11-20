@@ -148,6 +148,51 @@ public sealed class MakeConstTests
     }
 
     [TestMethod]
+    public async Task FixAll_MakesEveryEligibleLocalConstant()
+    {
+        const string source = """
+            class Program
+            {
+                static int Calculate()
+                {
+                    int first = 1;
+                    int second = 2;
+                    return first + second;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.AreEqual(2, diagnostics.Length);
+
+        var provider = new MakeConstCodeFixProvider();
+        var context = new FixAllContext(
+            document,
+            provider,
+            FixAllScope.Document,
+            "Make constant",
+            provider.FixableDiagnosticIds,
+            new FixedDiagnostics(diagnostics),
+            CancellationToken.None);
+        CodeAction action = await provider.GetFixAllProvider().GetFixAsync(context)
+            ?? throw new InvalidOperationException("No Fix All action.");
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
+
+        SyntaxNode root = await changed.GetSyntaxRootAsync()
+            ?? throw new InvalidOperationException("The changed document has no syntax root.");
+        SemanticModel semanticModel = await changed.GetSemanticModelAsync()
+            ?? throw new InvalidOperationException("The changed document has no semantic model.");
+        ILocalSymbol[] locals = root.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .Select(variable => Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(variable)))
+            .ToArray();
+        Assert.AreEqual(2, locals.Length);
+        Assert.IsTrue(locals.All(local => local.IsConst));
+        Assert.AreEqual(0, (await GetAnalyzerDiagnosticsAsync(changed)).Length);
+    }
+
+    [TestMethod]
     public async Task MultipleVariablesWithNonConstantInitializer_DoesNotProduceInvalidCodeFix()
     {
         const string source = """
@@ -274,7 +319,7 @@ public sealed class MakeConstTests
                 "TestProject",
                 "TestProject",
                 LanguageNames.CSharp,
-                parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+                parseOptions: new CSharpParseOptions(LanguageVersion.Latest),
                 compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
                 metadataReferences: references))
             .AddDocument(documentId, "Test.cs", SourceText.From(source));
@@ -300,5 +345,23 @@ public sealed class MakeConstTests
         return await compilation
             .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new MakeConstAnalyzer()))
             .GetAnalyzerDiagnosticsAsync();
+    }
+
+    private sealed class FixedDiagnostics(ImmutableArray<Diagnostic> diagnostics) : FixAllContext.DiagnosticProvider
+    {
+        public override Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(
+            Document document,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IEnumerable<Diagnostic>>(diagnostics);
+
+        public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(
+            Project project,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(Enumerable.Empty<Diagnostic>());
+
+        public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(
+            Project project,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IEnumerable<Diagnostic>>(diagnostics);
     }
 }

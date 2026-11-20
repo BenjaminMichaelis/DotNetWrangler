@@ -533,7 +533,7 @@ internal static class PragmaTestHelper
         Solution solution = workspace.CurrentSolution
             .AddProject(ProjectInfo.Create(
                 projectId, VersionStamp.Create(), "PragmaTests", "PragmaTests", LanguageNames.CSharp,
-                parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+                parseOptions: new CSharpParseOptions(LanguageVersion.Latest),
                 compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
                 metadataReferences: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]))
             .AddDocument(documentId, fileName, SourceText.From(source), filePath: Path.Combine(directory, fileName))

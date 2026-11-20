@@ -82,7 +82,7 @@ public sealed class AnalyzerConfigurationTests
                 "TestProject",
                 "TestProject",
                 LanguageNames.CSharp,
-                parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+                parseOptions: new CSharpParseOptions(LanguageVersion.Latest),
                 compilationOptions: new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary,
                     nullableContextOptions: NullableContextOptions.Enable),
