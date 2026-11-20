@@ -59,7 +59,12 @@ jobs:
       - name: Create failed-test playlist
         if: failure() && hashFiles('TestResults/*.trx') != ''
         uses: BenjaminMichaelis/trx-to-vsplaylist@86a717b0e00d014347c0f16759127ae012154be7 # v4
+        # The action's pre step always runs and fails installing other SDK channels on Windows,
+        # so reuse the installed SDK and roll the net10.0 tool forward onto it.
+        env:
+          DOTNET_ROLL_FORWARD: Major
         with:
+          dotnet-version: "11.0"
           trx-file-path: TestResults/*.trx
           test-outcomes: Failed
           artifact-name: failed-tests-playlist-${{ matrix.os }}
