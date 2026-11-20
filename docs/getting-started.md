@@ -10,6 +10,8 @@ Wrangler is distributed as the [`DotNetWrangler.Analyzers`](https://www.nuget.or
 dotnet add package DotNetWrangler.Analyzers
 ```
 
+For beta builds, add `--prerelease` or specify an exact prerelease version with `--version`.
+
 The package is a development dependency, so it does not flow to projects that reference yours. Build with a .NET SDK whose compiler supports the analyzer's Roslyn dependency; the current version is recorded in [Wrangler.Analyzers.csproj](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/src/Wrangler.Analyzers/Wrangler.Analyzers.csproj). A `netstandard2.0` target alone does not guarantee compatibility with an older compiler host.
 
 ## Use the analyzers from source

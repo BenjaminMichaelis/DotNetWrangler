@@ -81,10 +81,15 @@ dotnet test DotNetWrangler.slnx
 
 ## Release
 
-Pushing a `vMAJOR.MINOR.PATCH[-prerelease]` tag runs the [publish workflow](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/.github/workflows/publish.yml). It tests the solution, packs with the tag's version, and pushes to nuget.org through [trusted publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) (no API key). Verify a package locally first:
+The [publish workflow](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/.github/workflows/publish.yml) tests the solution, packs it, and publishes to nuget.org through [trusted publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing).
+
+- Pushing a `vMAJOR.MINOR.PATCH[-prerelease]` tag publishes exactly that version. Only tags without a suffix publish stable versions.
+- The nightly run at 10:05 UTC publishes from `main` only if that commit has not already published. It takes the highest tagged version, increments its patch if it is stable, and appends `-beta.<run number>`. After the first tagged beta, use a different suffix (for example, `-rc.1`) for manual prereleases to avoid colliding with nightly versions.
+
+Verify a package locally before releasing:
 
 ```shell
-dotnet pack src/Wrangler.Package/Wrangler.Package.csproj -c Release -o artifacts -p:Version=0.1.0
+dotnet pack src/Wrangler.Package/Wrangler.Package.csproj -c Release -o artifacts -p:Version=0.0.0-local
 ```
 
 See [maintaining the documentation](docs/publishing.md) to build, preview, customize, and publish the DocFX site.
