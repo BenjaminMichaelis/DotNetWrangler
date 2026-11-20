@@ -1,6 +1,6 @@
 ---
 name: add-analyzer
-description: Step-by-step workflow for adding or changing a Wrangler Roslyn analyzer rule (WR####), including research, ID allocation, implementation, code fixes, tests, configuration, and documentation. Use when asked to create a new analyzer, add a diagnostic rule, or substantially change an existing rule's behavior. Do not use for documentation-only edits or general test runs.
+description: Step-by-step workflow for adding or changing a Wrangler Roslyn analyzer rule (WRANGLER####), including research, ID allocation, implementation, code fixes, tests, configuration, and documentation. Use when asked to create a new analyzer, add a diagnostic rule, or substantially change an existing rule's behavior. Do not use for documentation-only edits or general test runs.
 ---
 
 # Add a Wrangler analyzer rule
@@ -21,12 +21,12 @@ Follow this workflow when adding a rule or materially changing one. [`AGENTS.md`
 
 ## 3. Allocate the ID and descriptor
 
-- Read both `src\Wrangler.Analyzers\AnalyzerReleases.Shipped.md` and `AnalyzerReleases.Unshipped.md`; take the next unused `WR####`. Never reuse or renumber an ID.
+- Read both `src\Wrangler.Analyzers\AnalyzerReleases.Shipped.md` and `AnalyzerReleases.Unshipped.md`; take the next unused `WRANGLER####`. Never reuse or renumber an ID.
 - Create the descriptor with a stable ID, a category matching existing rules (`Usage`, `Reliability`, ...), a default severity, `isEnabledByDefault`, and `helpLinkUri: HelpLinks.ForRule(id)`.
 - Message format arguments should name the specific symbol or expression so the diagnostic is actionable.
 - Do not add `WellKnownDiagnosticTags.NotConfigurable` or a custom on/off switch; standard `dotnet_diagnostic.<ID>.severity` and pragmas must work.
 - Add the rule to `AnalyzerReleases.Unshipped.md` with matching category, severity, and notes.
-- When adding an analyzer class, include its descriptors in `PragmaTitleCatalog` so WR0005 verifies its titles. The descriptor-discovery regression must cover every analyzer in the assembly.
+- When adding an analyzer class, include its descriptors in `PragmaTitleCatalog` so WRANGLER0005 verifies its titles. The descriptor-discovery regression must cover every analyzer in the assembly.
 
 ## 4. Implement the analyzer
 
@@ -67,9 +67,11 @@ Add a `tests\Wrangler.Tests\<Rule>Tests.cs` file using the existing harness patt
 
 ## 7. Document
 
-- README: add catalog rows, a `### WR####` rule section (the help-link anchor), examples of flagged and preferred code, legitimate-use guidance, and related-tool differences.
+- README: add a catalog row and a `### WRANGLER####` section (the existing help-link convention) linking to the canonical rule page.
+- Add `docs\rules\WRANGLER####.md` with the diagnostic title, default severity, code-fix availability, examples of flagged and preferred code, legitimate-use guidance, and relevant configuration. Keep detailed content in one place; link to shared guides under `docs\` rather than duplicating them.
+- Update the README's related-tool differences when needed.
 - Update `AGENTS.md` when the rule introduces lasting invariants or intentional product decisions future contributors must preserve.
-- Keep the descriptor, release entry, README catalog/anchor, and help link consistent.
+- Keep the descriptor, release entry, README catalog/anchor, canonical rule page, and help link consistent.
 
 ## 8. Verify and finish
 

@@ -2,7 +2,7 @@
 
 ## Purpose and project structure
 
-Wrangler provides Roslyn analyzers that put practical guardrails on .NET code. Prefer explicit contracts and meaningful failures over hiding missing data or silencing the compiler. The [README](README.md) is the user-facing source of truth for the analyzer catalog, configuration, framework compatibility, and rule examples.
+Wrangler provides Roslyn analyzers that put practical guardrails on .NET code. Prefer explicit contracts and meaningful failures over hiding missing data or silencing the compiler. The [README](README.md) is the user-facing entry point and analyzer catalog; `docs\` holds the canonical getting-started, configuration, suppression, and per-rule documentation.
 
 Path | Responsibility
 -----|---------------
@@ -17,8 +17,8 @@ Add rules to these existing projects, not a separate project per rule. Keep comp
 Follow the step-by-step [`add-analyzer` skill](.github/skills/add-analyzer/SKILL.md) for the full workflow. The rules below always apply.
 
 - Research existing SDK and third-party analyzers first; start with the README's [related tools](README.md#related-tools). Explain the intended behavior difference where functionality overlaps.
-- Keep diagnostic IDs stable and use the `WR####` scheme. Check both `AnalyzerReleases.Shipped.md` and `AnalyzerReleases.Unshipped.md` before allocating an ID; record new rules in the unshipped file.
-- Keep the descriptor, release entry, README catalog, rule documentation, and `HelpLinks.ForRule` destination consistent. README rule anchors are diagnostic help-link targets.
+- Keep diagnostic IDs stable and use the `WRANGLER####` scheme. Check both `AnalyzerReleases.Shipped.md` and `AnalyzerReleases.Unshipped.md` before allocating an ID; record new rules in the unshipped file.
+- Keep the descriptor, release entry, README catalog, `docs\rules\WRANGLER####.md`, and `HelpLinks.ForRule` destination consistent. README rule anchors are diagnostic help-link targets; preserve them as links to the canonical rule pages.
 - Every rule must remain individually configurable through Roslyn's standard `dotnet_diagnostic.<ID>.severity` settings, including `none`, and support scoped pragma suppression. Do not mark diagnostics non-configurable or add a custom enable/disable mechanism unnecessarily.
 - Follow existing formatting and naming. Comments should explain only essential constraints or rationale, not narrate code or add routine Arrange/Act/Assert headings.
 - When committing or creating a PR, use Conventional Commits for commit messages and PR titles. Do not add a GitHub Copilot co-author.
@@ -41,16 +41,16 @@ These are intentional product decisions, not false positives to silently exempt:
 
 - `!` changes static analysis, not the runtime value. Prefer null checks, nullable contracts/attributes, meaningful initialization, or not-null assertions when appropriate. An empty first name is not a valid universal default.
 - Legitimate uses exist, including deliberately passing null to test argument validation or relying on a guarantee the compiler cannot infer. They still receive diagnostics. Document exceptions with a narrow pragma and a reason; do not automatically exempt exception assertions or negative tests. The analyzer does not enforce the wording of that reason.
-- WR0003 takes precedence for `null!` and defaults known to be reference types, including reference-constrained generics. Other defaults receive WR0002, even in test classes: `default(int)!`, nullable value-type defaults, and unconstrained/`notnull` generics must not be described as definitely fabricating a null reference.
-- Other suppressions receive WR0004 in recognized test classes when the framework-specific advice is applicable, or WR0002 otherwise. Prefix logical negation and null-conditional access are not null-forgiving operators.
+- WRANGLER0003 takes precedence for `null!` and defaults known to be reference types, including reference-constrained generics. Other defaults receive WRANGLER0002, even in test classes: `default(int)!`, nullable value-type defaults, and unconstrained/`notnull` generics must not be described as definitely fabricating a null reference.
+- Other suppressions receive WRANGLER0004 in recognized test classes when the framework-specific advice is applicable, or WRANGLER0002 otherwise. Prefix logical negation and null-conditional access are not null-forgiving operators.
 - Identify test frameworks through referenced type symbols and test-method attributes, including inherited attributes and methods on base classes. Merely referencing a test framework, naming a class `*Tests`, or defining framework lookalikes in analyzed source is not sufficient.
-- Use canonical framework APIs rather than hard-coded package-version branches when possible. Consult the README and official framework documentation before changing assertion recommendations.
-- Only recommend TUnit's awaited assertions in a suitable async method, local function, or lambda. Respect the nearest function boundary and await-forbidden contexts. Check enclosing unsafe types, members, and blocks too; stopping at an async method can miss inherited unsafe context. Fall back to WR0002 rather than suggesting an illegal `await`.
+- Use canonical framework APIs rather than hard-coded package-version branches when possible. Consult `docs\rules\WRANGLER0004.md` and official framework documentation before changing assertion recommendations.
+- Only recommend TUnit's awaited assertions in a suitable async method, local function, or lambda. Respect the nearest function boundary and await-forbidden contexts. Check enclosing unsafe types, members, and blocks too; stopping at an async method can miss inherited unsafe context. Fall back to WRANGLER0002 rather than suggesting an illegal `await`.
 - Do not claim all assertions update compiler null-state. Nullable annotations, framework diagnostic suppressors, and capturing a validated return value are different mechanisms; multiple-assert blocks can also continue after a failed assertion.
 
 ## Pragma documentation rules
 
-- WR0005 (IDs/titles) and WR0006 (justification) are independent opt-in rules. Preserve normal severity configuration and scoped suppression.
+- WRANGLER0005 (IDs/titles) and WRANGLER0006 (justification) are independent opt-in rules. Preserve normal severity configuration and scoped suppression.
 - One suppressed ID needs only its title in the comment; multiple distinct IDs require labeled titles. Wrangler titles come from the invariant descriptors, not duplicated strings. Register new analyzer classes in `PragmaTitleCatalog` so their descriptors are included. Changing a title changes the accepted suppression text.
 - External titles default to presence-only validation; an optional `Wrangler.PragmaTitles.txt` catalog verifies supplied titles, and strict mode also requires mappings for unknown IDs. Keep compiler analysis independent of Workspaces; only code fixes may discover project analyzer descriptors.
 - A justification is an explicit, nonempty `Justification:` field on the pragma line or the immediately preceding standalone `//` line. Do not invent reasons, enforce their quality, or replace ambiguous free-text comments.
