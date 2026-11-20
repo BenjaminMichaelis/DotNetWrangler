@@ -14,6 +14,8 @@ Add rules to these existing projects, not a separate project per rule. Keep comp
 
 ## Adding or changing a rule
 
+Follow the step-by-step [`add-analyzer` skill](.github/skills/add-analyzer/SKILL.md) for the full workflow. The rules below always apply.
+
 - Research existing SDK and third-party analyzers first; start with the README's [related tools](README.md#related-tools). Explain the intended behavior difference where functionality overlaps.
 - Keep diagnostic IDs stable and use the `WR####` scheme. Check both `AnalyzerReleases.Shipped.md` and `AnalyzerReleases.Unshipped.md` before allocating an ID; record new rules in the unshipped file.
 - Keep the descriptor, release entry, README catalog, rule documentation, and `HelpLinks.ForRule` destination consistent. README rule anchors are diagnostic help-link targets.
