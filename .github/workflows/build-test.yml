@@ -1,0 +1,65 @@
+name: Build and test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-test-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-test:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up .NET
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          # The test project targets net8.0, so its runtime is required alongside the build SDK.
+          dotnet-version: |
+            8.0.x
+            11.0.x
+      - name: Restore
+        run: dotnet restore DotNetWrangler.slnx
+      - name: Build
+        run: dotnet build DotNetWrangler.slnx --configuration Release --no-restore -warnaserror
+      - name: Test
+        run: >-
+          dotnet test DotNetWrangler.slnx
+          --configuration Release
+          --no-build
+          --logger trx
+          --results-directory TestResults
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+      - name: Create failed-test playlist
+        if: failure() && hashFiles('TestResults/*.trx') != ''
+        uses: BenjaminMichaelis/trx-to-vsplaylist@86a717b0e00d014347c0f16759127ae012154be7 # v4
+        with:
+          trx-file-path: TestResults/*.trx
+          test-outcomes: Failed
+          artifact-name: failed-tests-playlist-${{ matrix.os }}
