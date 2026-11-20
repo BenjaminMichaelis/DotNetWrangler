@@ -77,7 +77,7 @@ Add a `tests\Wrangler.Tests\<Rule>Tests.cs` file using the existing harness patt
 
 ```powershell
 dotnet test tests\Wrangler.Tests\Wrangler.Tests.csproj --filter "FullyQualifiedName~<Rule>Tests|FullyQualifiedName~AnalyzerConfigurationTests"
-dotnet test DotnetBotWranglers.sln
+dotnet test DotNetWrangler.slnx
 ```
 
 - Builds must have no new warnings, including Roslyn extended analyzer rules (`RS####`).

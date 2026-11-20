@@ -1,4 +1,4 @@
-# Wrangler agent guidance
+# .NET Wrangler agent guidance
 
 ## Purpose and project structure
 
@@ -65,7 +65,7 @@ Use the existing test harness and add focused regression cases for changed behav
 dotnet test tests\Wrangler.Tests\Wrangler.Tests.csproj --filter "FullyQualifiedName~NullForgivingOperatorTests|FullyQualifiedName~AnalyzerConfigurationTests"
 
 # Entire solution
-dotnet test DotnetBotWranglers.sln
+dotnet test DotNetWrangler.slnx
 ```
 
 - Check IDs, counts, relevant message arguments, and diagnostic spans as appropriate, not just whether any diagnostic exists.

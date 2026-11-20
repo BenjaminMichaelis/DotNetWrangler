@@ -1,4 +1,4 @@
-# Wrangler analyzers
+# .NET Wrangler
 
 Roslyn analyzers that put guardrails on .NET code.
 
@@ -73,5 +73,5 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 ## Build and test
 
 ```shell
-dotnet test DotnetBotWranglers.sln
+dotnet test DotNetWrangler.slnx
 ```

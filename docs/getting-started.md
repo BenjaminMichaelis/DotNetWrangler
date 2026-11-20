@@ -8,11 +8,11 @@ Wrangler currently lives in this source repository. The analyzer and code-fix pr
 
 ## Use the analyzers from source
 
-Clone this repository alongside the project you want to analyze. In the consuming `.csproj`, add a reference to the analyzer project:
+Clone this repository into a folder named `DotNetWrangler` alongside the project you want to analyze. In the consuming `.csproj`, add a reference to the analyzer project:
 
 ```xml
 <ItemGroup>
-  <ProjectReference Include="..\DotnetBotWranglers\src\Wrangler.Analyzers\Wrangler.Analyzers.csproj"
+  <ProjectReference Include="..\DotNetWrangler\src\Wrangler.Analyzers\Wrangler.Analyzers.csproj"
                     OutputItemType="Analyzer"
                     ReferenceOutputAssembly="false" />
 </ItemGroup>
