@@ -72,6 +72,7 @@ public sealed class NullForgivingOperatorTests
     [DataRow("where T : notnull", "WR0002")]
     [DataRow("", "WR0002")]
     [DataRow("where T : class", "WR0003")]
+    [DataRow("where T : System.Exception", "WR0003")]
     public async Task ForgivingGenericDefault_UsesTypeConstraints(string constraint, string expectedId)
     {
         string source = $$"""
@@ -119,11 +120,18 @@ public sealed class NullForgivingOperatorTests
         }
         """;
 
-    private const string XunitFramework = """
+    private const string XunitCore = """
         namespace Xunit
         {
             public class FactAttribute : System.Attribute { }
             public class TheoryAttribute : FactAttribute { }
+        }
+        """;
+
+    private const string XunitFramework = XunitCore + """
+
+        namespace Xunit
+        {
             public static class Assert
             {
                 public static T Throws<T>(System.Action action) where T : System.Exception =>
@@ -159,6 +167,16 @@ public sealed class NullForgivingOperatorTests
         }
         """;
 
+    private const string SynchronousNameLength = "private int NameLength() => Name!.Length;";
+
+    private const string AsyncNameLength = """
+        private async System.Threading.Tasks.Task<int> NameLength()
+        {
+            await System.Threading.Tasks.Task.Yield();
+            return Name!.Length;
+        }
+        """;
+
     [TestMethod]
     [DataRow(MSTestFramework, "Microsoft.VisualStudio.TestTools.UnitTesting", "TestMethod", "Assert.IsNotNull(Name)")]
     [DataRow(MSTestFramework, "Microsoft.VisualStudio.TestTools.UnitTesting", "DataTestMethod", "Assert.IsNotNull(Name)")]
@@ -169,13 +187,14 @@ public sealed class NullForgivingOperatorTests
     [DataRow(NUnitFramework, "NUnit.Framework", "TestCase<string>(\"name\")", "Assert.That(Name, Is.Not.Null)", "string name")]
     [DataRow(NUnitFramework, "NUnit.Framework", "TestCaseSource(nameof(Names))", "Assert.That(Name, Is.Not.Null)", "string name")]
     [DataRow(NUnitFramework, "NUnit.Framework", "Theory", "Assert.That(Name, Is.Not.Null)")]
-    [DataRow(TUnitFramework, "TUnit.Core", "Test", "await Assert.That(Name).IsNotNull()")]
+    [DataRow(TUnitFramework, "TUnit.Core", "Test", "await Assert.That(Name).IsNotNull()", "", AsyncNameLength)]
     public async Task ForgivingInTestClass_ReportsUseAssertion(
         string framework,
         string frameworkNamespace,
         string testAttribute,
         string expectedAssertion,
-        string parameters = "")
+        string parameters = "",
+        string helper = SynchronousNameLength)
     {
         string source = $$"""
             using {{frameworkNamespace}};
@@ -188,11 +207,7 @@ public sealed class NullForgivingOperatorTests
                 [{{testAttribute}}]
                 public void NameIsSet({{parameters}}) { }
 
-                private async System.Threading.Tasks.Task<int> NameLength()
-                {
-                    await System.Threading.Tasks.Task.Yield();
-                    return Name!.Length;
-                }
+                {{helper}}
             }
             """;
 
@@ -206,8 +221,11 @@ public sealed class NullForgivingOperatorTests
     [TestMethod]
     [DataRow(XunitFramework, "Xunit.Fact")]
     [DataRow(NUnitFramework, "NUnit.Framework.Test")]
-    [DataRow(TUnitFramework, "TUnit.Core.Test")]
-    public async Task ForgivingInDerivedTestClass_ReportsUseAssertion(string framework, string testAttribute)
+    [DataRow(TUnitFramework, "TUnit.Core.Test", AsyncNameLength)]
+    public async Task ForgivingInDerivedTestClass_ReportsUseAssertion(
+        string framework,
+        string testAttribute,
+        string helper = SynchronousNameLength)
     {
         string source = $$"""
             abstract class TestBase
@@ -219,11 +237,7 @@ public sealed class NullForgivingOperatorTests
             class PersonTests : TestBase
             {
                 public string? Name { get; set; }
-                private async System.Threading.Tasks.Task<int> NameLength()
-                {
-                    await System.Threading.Tasks.Task.Yield();
-                    return Name!.Length;
-                }
+                {{helper}}
             }
             """;
 
@@ -239,15 +253,90 @@ public sealed class NullForgivingOperatorTests
     [DataRow(TUnitFramework)]
     public async Task ForgivingOutsideTestClassWithFrameworkReferenced_ReportsNullForgivingOperator(string framework)
     {
-        const string source = """
-            class Person
+        string source = $$"""
+            class PersonTests
             {
                 public string? Name { get; set; }
-                public int NameLength() => Name!.Length;
+                {{AsyncNameLength}}
             }
             """;
 
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+
+        Assert.AreEqual(1, diagnostics.Length);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+    }
+
+    [TestMethod]
+    public async Task ForgivingWithCustomDerivedTestAttribute_ReportsUseAssertion()
+    {
+        string source = $$"""
+            class CustomFactAttribute : Xunit.FactAttribute { }
+            class RetryFactAttribute : CustomFactAttribute { }
+
+            class PersonTests
+            {
+                public string? Name { get; set; }
+
+                [RetryFact]
+                public void NameIsSet() { }
+
+                {{SynchronousNameLength}}
+            }
+            """;
+
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework);
+
+        Assert.AreEqual(1, diagnostics.Length);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
+        StringAssert.Contains(diagnostics[0].GetMessage(), "'Assert.NotNull(Name)'");
+    }
+
+    [TestMethod]
+    public async Task ForgivingWithMultipleFrameworks_UsesMarkedFrameworkAssertion()
+    {
+        string source = $$"""
+            using NUnit.Framework;
+
+            class PersonTests
+            {
+                public string? Name { get; set; }
+
+                [Test]
+                public void NameIsSet() { }
+
+                {{SynchronousNameLength}}
+            }
+            """;
+
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework + NUnitFramework);
+
+        Assert.AreEqual(1, diagnostics.Length);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
+        StringAssert.Contains(diagnostics[0].GetMessage(), "'Assert.That(Name, Is.Not.Null)'");
+    }
+
+    [TestMethod]
+    public async Task ForgivingWithLookalikeAttributeAndFrameworkReferenced_ReportsGeneralRule()
+    {
+        string source = $$"""
+            namespace Lookalike
+            {
+                public class FactAttribute : System.Attribute { }
+            }
+
+            class PersonTests
+            {
+                public string? Name { get; set; }
+
+                [Lookalike.Fact]
+                public void NameIsSet() { }
+
+                {{SynchronousNameLength}}
+            }
+            """;
+
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework);
 
         Assert.AreEqual(1, diagnostics.Length);
         Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
@@ -285,14 +374,23 @@ public sealed class NullForgivingOperatorTests
 
     [TestMethod]
     [DataRow(XunitFramework, "Xunit.Fact")]
+    [DataRow(XunitFramework, "Xunit.Fact", "default(string)!")]
+    [DataRow(XunitFramework, "Xunit.Fact", "default!")]
     [DataRow(NUnitFramework, "NUnit.Framework.Test")]
+    [DataRow(NUnitFramework, "NUnit.Framework.Test", "default(string)!")]
+    [DataRow(NUnitFramework, "NUnit.Framework.Test", "default!")]
     [DataRow(TUnitFramework, "TUnit.Core.Test")]
-    public async Task ForgivingNullLiteralInTestClass_ReportsFabricatedNonNullValue(string framework, string testAttribute)
+    [DataRow(TUnitFramework, "TUnit.Core.Test", "default(string)!")]
+    [DataRow(TUnitFramework, "TUnit.Core.Test", "default!")]
+    public async Task ForgivingNullOrReferenceDefaultInTestClass_ReportsFabricatedNonNullValue(
+        string framework,
+        string testAttribute,
+        string initializer = "null!")
     {
         string source = $$"""
             class PersonTests
             {
-                public string Name { get; set; } = null!;
+                public string Name { get; set; } = {{initializer}};
 
                 [{{testAttribute}}]
                 public void NameIsSet() { }
@@ -306,24 +404,36 @@ public sealed class NullForgivingOperatorTests
     }
 
     [TestMethod]
-    public async Task ForgivingInTUnitClassWithoutAssertions_ReportsNullForgivingOperator()
+    [DataRow(TUnitCore, "TUnit.Core.Test", "WR0002", "")]
+    [DataRow(TUnitFramework, "TUnit.Core.Test", "WR0004", "await Assert.That(Name).IsNotNull()")]
+    [DataRow(XunitCore, "Xunit.Fact", "WR0002", "")]
+    [DataRow(XunitFramework, "Xunit.Fact", "WR0004", "Assert.NotNull(Name)")]
+    public async Task ForgivingInTestClass_RequiresAssertionsReference(
+        string framework,
+        string testAttribute,
+        string expectedId,
+        string expectedAssertion)
     {
-        const string source = """
+        string source = $$"""
             class PersonTests
             {
                 public string? Name { get; set; }
 
-                [TUnit.Core.Test]
+                [{{testAttribute}}]
                 public void NameIsSet() { }
 
-                private int NameLength() => Name!.Length;
+                {{AsyncNameLength}}
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitCore);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
 
         Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(expectedId, diagnostics[0].Id);
+        if (expectedAssertion.Length > 0)
+        {
+            StringAssert.Contains(diagnostics[0].GetMessage(), $"'{expectedAssertion}'");
+        }
     }
 
     [TestMethod]
@@ -336,7 +446,9 @@ public sealed class NullForgivingOperatorTests
     [DataRow("private async Task Helper() { await Task.Yield(); try { } catch (Exception) when (GetValue()!.Length > 0) { } }")]
     [DataRow("private async Task Helper() { await Task.Yield(); string Local() => GetValue()!; }")]
     [DataRow("private async Task Helper() { await Task.Yield(); Func<string> read = () => GetValue()!; }")]
-    public async Task ForgivingInTUnitNonAwaitableContext_ReportsGeneralRule(string member)
+    [DataRow("private unsafe async Task Helper() { _ = GetValue()!; }", true)]
+    [DataRow("private async Task Helper() { await Task.Yield(); unsafe { _ = GetValue()!; } }", true)]
+    public async Task ForgivingInTUnitNonAwaitableContext_ReportsGeneralRule(string member, bool allowUnsafe = false)
     {
         string source = $$"""
             using System;
@@ -352,10 +464,42 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework, allowUnsafe);
 
         Assert.AreEqual(1, diagnostics.Length);
         Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+    }
+
+    [TestMethod]
+    public async Task ForgivingInTUnitAsyncLocalFunctionInsideSynchronousMethod_ReportsUseAssertion()
+    {
+        const string source = """
+            using System.Threading.Tasks;
+
+            class PersonTests
+            {
+                [TUnit.Core.Test]
+                public void NameIsSet()
+                {
+                    async Task<int> Read()
+                    {
+                        await Task.Yield();
+                        string? name = GetValue();
+                        return name!.Length;
+                    }
+
+                    _ = Read();
+                }
+
+                private static string? GetValue() => null;
+            }
+            """;
+
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework);
+
+        Assert.AreEqual(1, diagnostics.Length);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
+        StringAssert.Contains(diagnostics[0].GetMessage(), "'await Assert.That(name).IsNotNull()'");
     }
 
     [TestMethod]
@@ -478,7 +622,7 @@ public sealed class NullForgivingOperatorTests
             .Where(path => Path.GetDirectoryName(path) == runtimeDirectory)
             .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
             .ToList();
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
         var compilationOptions = new CSharpCompilationOptions(
             OutputKind.DynamicallyLinkedLibrary,
             nullableContextOptions: NullableContextOptions.Enable,
@@ -491,7 +635,7 @@ public sealed class NullForgivingOperatorTests
                 [CSharpSyntaxTree.ParseText(referencedFrameworkSource, parseOptions)],
                 references,
                 compilationOptions);
-            Assert.IsFalse(framework.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+            AssertNoCompilationErrors(framework);
             references.Add(framework.ToMetadataReference());
         }
 
@@ -500,10 +644,18 @@ public sealed class NullForgivingOperatorTests
             [CSharpSyntaxTree.ParseText(source, parseOptions)],
             references,
             compilationOptions);
-        Assert.IsFalse(compilation.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        AssertNoCompilationErrors(compilation);
 
         return await compilation
             .WithAnalyzers([new NullForgivingOperatorAnalyzer()])
             .GetAnalyzerDiagnosticsAsync();
+    }
+
+    private static void AssertNoCompilationErrors(Compilation compilation)
+    {
+        Diagnostic[] errors = compilation.GetDiagnostics()
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        Assert.AreEqual(0, errors.Length, string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString())));
     }
 }
