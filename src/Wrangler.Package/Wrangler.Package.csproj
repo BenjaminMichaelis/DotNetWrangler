@@ -12,10 +12,14 @@
     <Version>0.0.0-dev</Version>
     <Authors>Benjamin Michaelis</Authors>
     <Description>Roslyn analyzers that put guardrails on .NET code: explicit null contracts, meaningful test failures, and reviewable warning suppressions.</Description>
+    <Copyright>Copyright (c) 2026 Benjamin Michaelis</Copyright>
+    <PackageReleaseNotes>See the versioned source and history at https://github.com/BenjaminMichaelis/DotNetWrangler.</PackageReleaseNotes>
     <PackageTags>roslyn;analyzers;nullable;null-forgiving;pragma;code-quality</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://benjaminmichaelis.github.io/DotNetWrangler/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/BenjaminMichaelis/DotNetWrangler</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 

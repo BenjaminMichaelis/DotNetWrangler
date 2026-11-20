@@ -93,3 +93,7 @@ dotnet pack src/Wrangler.Package/Wrangler.Package.csproj -c Release -o artifacts
 ```
 
 See [maintaining the documentation](docs/publishing.md) to build, preview, customize, and publish the DocFX site.
+
+## License
+
+.NET Wrangler is licensed under the [Apache-2.0 license](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/LICENSE).

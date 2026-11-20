@@ -39,12 +39,13 @@ jobs:
           identifier='(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'
           tag_pattern="^v($number\.$number\.$number)(-$identifier(\.$identifier)*)?$"
 
-          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             if ! [[ "$GITHUB_REF_NAME" =~ $tag_pattern ]]; then
               echo "::error::Tag '$GITHUB_REF_NAME' is not a vMAJOR.MINOR.PATCH[-prerelease] version."
               exit 1
             fi
             version="${GITHUB_REF_NAME#v}"
+            release_notes="Source for this version: https://github.com/$GITHUB_REPOSITORY/tree/$GITHUB_REF_NAME"
           else
             deployments=$(gh api --paginate \
               "repos/$GITHUB_REPOSITORY/deployments?environment=release&sha=$GITHUB_SHA" \
@@ -75,16 +76,18 @@ jobs:
               base="$major.$minor.$((patch + 1))"
             fi
             version="$base-beta.$GITHUB_RUN_NUMBER"
+            release_notes="Nightly beta from main commit $GITHUB_SHA."
           fi
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release_notes=$release_notes" >> "$GITHUB_OUTPUT"
       - name: Set up .NET
         if: steps.version.outputs.version != ''
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: |
             8.0.x
-            11.0.x
+            11.0.100
       - name: Test
         if: steps.version.outputs.version != ''
         run: dotnet test DotNetWrangler.slnx -c Release
@@ -92,10 +95,12 @@ jobs:
         if: steps.version.outputs.version != ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_NOTES: ${{ steps.version.outputs.release_notes }}
         run: >-
           dotnet pack src/Wrangler.Package/Wrangler.Package.csproj
           -c Release -o artifacts
           "-p:Version=$VERSION"
+          "-p:PackageReleaseNotes=$RELEASE_NOTES"
           "-p:RepositoryCommit=$GITHUB_SHA"
       - name: Upload package
         if: steps.version.outputs.version != ''
@@ -108,7 +113,7 @@ jobs:
   publish:
     name: Publish to NuGet
     needs: pack
-    if: needs.pack.outputs.version != ''
+    if: needs.pack.outputs.version != '' && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
