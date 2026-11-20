@@ -1,0 +1,4 @@
+- name: Documentation
+  href: docs/
+- name: Analyzer catalog
+  href: README.md#analyzer-catalog

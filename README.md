@@ -4,6 +4,8 @@ Roslyn analyzers that put guardrails on .NET code.
 
 Wrangler encourages explicit null contracts, meaningful test failures, and reviewable warning suppressions. It also offers a code fix for constant-valued locals.
 
+Read the [documentation site](https://benjaminmichaelis.github.io/DotNetWrangler/) or browse the guides below.
+
 ## Start here
 
 - [Getting started](docs/getting-started.md): use the analyzers from source and understand the current distribution limits.
@@ -75,3 +77,5 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 ```shell
 dotnet test DotnetBotWranglers.sln
 ```
+
+See [maintaining the documentation](docs/publishing.md) to build, preview, customize, and publish the DocFX site.

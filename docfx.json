@@ -1,0 +1,44 @@
+{
+  "build": {
+    "content": [
+      {
+        "files": ["index.md"],
+        "src": "docs"
+      },
+      {
+        "files": ["README.md", "toc.yml", "docs/**/*.md", "docs/**/toc.yml"],
+        "exclude": ["docs/index.md", "docs/template/**"]
+      }
+    ],
+    "resource": [
+      {
+        "files": ["docs/assets/**"]
+      }
+    ],
+    "output": "_site",
+    "template": ["default", "modern", "docs/template"],
+    "postProcessors": ["ExtractSearchIndex"],
+    "globalMetadata": {
+      "_appName": "Wrangler",
+      "_appTitle": "Wrangler",
+      "_appLogoPath": "docs/assets/logo.svg",
+      "_appFaviconPath": "docs/assets/logo.svg",
+      "_appFooter": "<span>Wrangler &middot; Practical guardrails for .NET.</span>",
+      "_enableSearch": true,
+      "_disableNewTab": true,
+      "_lang": "en",
+      "_gitContribute": {
+        "repo": "https://github.com/BenjaminMichaelis/DotNetWrangler",
+        "branch": "main"
+      }
+    },
+    "fileMetadata": {
+      "_layout": {
+        "README.md": "landing"
+      }
+    },
+    "sitemap": {
+      "baseUrl": "https://benjaminmichaelis.github.io/DotNetWrangler/"
+    }
+  }
+}

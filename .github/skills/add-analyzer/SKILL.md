@@ -69,6 +69,7 @@ Add a `tests\Wrangler.Tests\<Rule>Tests.cs` file using the existing harness patt
 
 - README: add a catalog row and a `### WRANGLER####` section (the existing help-link convention) linking to the canonical rule page.
 - Add `docs\rules\WRANGLER####.md` with the diagnostic title, default severity, code-fix availability, examples of flagged and preferred code, legitimate-use guidance, and relevant configuration. Keep detailed content in one place; link to shared guides under `docs\` rather than duplicating them.
+- Add the rule to the `docs\toc.yml` sidebar and validate the site with `dotnet docfx build docfx.json --warningsAsErrors`. See [maintaining the documentation](../../../docs/publishing.md) for setup.
 - Update the README's related-tool differences when needed.
 - Update `AGENTS.md` when the rule introduces lasting invariants or intentional product decisions future contributors must preserve.
 - Keep the descriptor, release entry, README catalog/anchor, canonical rule page, and help link consistent.

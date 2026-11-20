@@ -18,7 +18,7 @@ Clone this repository alongside the project you want to analyze. In the consumin
 </ItemGroup>
 ```
 
-Adjust `Include` relative to the consuming `.csproj`. Build that project with a .NET SDK whose compiler supports the analyzer's Roslyn dependency; the current version is recorded in [Wrangler.Analyzers.csproj](../src/Wrangler.Analyzers/Wrangler.Analyzers.csproj). A `netstandard2.0` target alone does not guarantee compatibility with an older compiler host.
+Adjust `Include` relative to the consuming `.csproj` and your local checkout's folder name. Build that project with a .NET SDK whose compiler supports the analyzer's Roslyn dependency; the current version is recorded in [Wrangler.Analyzers.csproj](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/src/Wrangler.Analyzers/Wrangler.Analyzers.csproj). A `netstandard2.0` target alone does not guarantee compatibility with an older compiler host.
 
 This reference loads the diagnostic analyzers, not the IDE code-fix providers. Code fixes are implemented in `Wrangler.CodeFixes`, but this reference does not install them into your editor.
 
