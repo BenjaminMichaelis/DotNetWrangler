@@ -22,6 +22,30 @@ This adds a package reference and restores it. To install a specific version, us
 2. On the **Browse** tab, select **nuget.org** as the package source, check **Include prerelease**, and search for `DotNetWrangler.Analyzers`.
 3. Select the package and choose **Install**.
 
+### Every project in a repository
+
+To analyze all projects with one shared version, add the package in a file at the repository root instead of to each project. Use the latest version listed on [NuGet.org](https://www.nuget.org/packages/DotNetWrangler.Analyzers) in place of the version below.
+
+If the repository uses [Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management), add a [global package reference](https://learn.microsoft.com/nuget/consume-packages/central-package-management#global-package-references) to `Directory.Packages.props`:
+
+```xml
+<ItemGroup>
+  <GlobalPackageReference Include="DotNetWrangler.Analyzers" Version="0.1.0-beta.1" />
+</ItemGroup>
+```
+
+Otherwise, add a package reference to `Directory.Build.props`:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="DotNetWrangler.Analyzers" Version="0.1.0-beta.1" PrivateAssets="all" />
+</ItemGroup>
+```
+
+`PrivateAssets="all"` keeps the analyzer from flowing to projects that reference yours; `dotnet add package` adds it for you, but a hand-written reference needs it explicitly. A global package reference applies it automatically.
+
+Test projects receive diagnostics too. That's intended: [WRANGLER0004](rules/WRANGLER0004.md) targets test code.
+
 ### Compiler compatibility
 
 Wrangler runs in your SDK's or IDE's Roslyn compiler. If you see `CS9057`, the compiler is too old for the installed package. Select a newer [.NET SDK](https://dotnet.microsoft.com/download) for builds or update your IDE for live analysis. You don't need to change your project's target framework.
