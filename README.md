@@ -8,7 +8,15 @@ Read the [documentation site](https://benjaminmichaelis.github.io/DotNetWrangler
 
 ## Start here
 
-- [Getting started](docs/getting-started.md): install the `DotNetWrangler.Analyzers` NuGet package or use the analyzers from source.
+From the folder containing your C# project's `.csproj`, install the [`DotNetWrangler.Analyzers`](https://www.nuget.org/packages/DotNetWrangler.Analyzers) NuGet prerelease:
+
+```shell
+dotnet add package DotNetWrangler.Analyzers --prerelease
+```
+
+Run `dotnet build` to see any Wrangler diagnostics. No source checkout is needed.
+
+- [Getting started](docs/getting-started.md): install in Visual Studio, check compiler compatibility, and try a diagnostic.
 - [Configuration](docs/configuration.md): choose severities and enable the optional pragma policies.
 - [Suppressing a diagnostic](docs/suppressions.md): document intentional exceptions without disabling a rule project-wide.
 - [Analyzer catalog](#analyzer-catalog): find a rule's explanation, examples, and code-fix availability.
