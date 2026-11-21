@@ -2,7 +2,7 @@
 
 Roslyn analyzers that put guardrails on .NET code.
 
-Wrangler encourages explicit null contracts, meaningful test failures, and reviewable warning suppressions. It also offers a code fix for constant-valued locals.
+Wrangler encourages explicit null contracts, meaningful test failures, and reviewable warning suppressions.
 
 Read the [documentation site](https://benjaminmichaelis.github.io/DotNetWrangler/) or browse the guides below.
 
@@ -25,44 +25,39 @@ Run `dotnet build` to see any Wrangler diagnostics. No source checkout is needed
 
 ID | Description | Default severity | Code fix
 ---|-------------|------------------|---------
-[WRANGLER0001](docs/rules/WRANGLER0001.md) | Make unmodified constant-valued locals `const`. | Warning | Yes
-[WRANGLER0002](docs/rules/WRANGLER0002.md) | Handle null explicitly instead of overriding nullable analysis with `!`. | Warning | No
-[WRANGLER0003](docs/rules/WRANGLER0003.md) | Avoid fabricating non-null values with `null!` or reference-type `default!`. | Warning | No
-[WRANGLER0004](docs/rules/WRANGLER0004.md) | Prefer a framework-specific not-null assertion in tests. | Warning | No
-[WRANGLER0005](docs/rules/WRANGLER0005.md) | Document explicit pragma suppression IDs and rule titles. | Disabled (opt-in warning) | When titles are available
-[WRANGLER0006](docs/rules/WRANGLER0006.md) | Require an explicit justification for pragma suppressions. | Disabled (opt-in warning) | No
+[WRANGLER0001](docs/rules/WRANGLER0001.md) | Handle null explicitly instead of overriding nullable analysis with `!`. | Warning | No
+[WRANGLER0002](docs/rules/WRANGLER0002.md) | Avoid fabricating non-null values with `null!` or reference-type `default!`. | Warning | No
+[WRANGLER0003](docs/rules/WRANGLER0003.md) | Prefer a framework-specific not-null assertion in tests. | Warning | No
+[WRANGLER0004](docs/rules/WRANGLER0004.md) | Document explicit pragma suppression IDs and rule titles. | Disabled (opt-in warning) | When titles are available
+[WRANGLER0005](docs/rules/WRANGLER0005.md) | Require an explicit justification for pragma suppressions. | Disabled (opt-in warning) | No
 
-The three null-forgiving rules are alternatives, not three diagnostics on every `!`. [WRANGLER0002](docs/rules/WRANGLER0002.md#which-null-forgiving-rule-applies) explains which rule takes precedence. Valid uses can still receive a diagnostic; use a [scoped suppression with a reason](docs/suppressions.md) for intentional exceptions.
+The three null-forgiving rules are alternatives, not three diagnostics on every `!`. [WRANGLER0001](docs/rules/WRANGLER0001.md#which-null-forgiving-rule-applies) explains which rule takes precedence. Valid uses can still receive a diagnostic; use a [scoped suppression with a reason](docs/suppressions.md) for intentional exceptions.
 
 ## Rule details
 
 ### WRANGLER0001
 
-[Variable can be made constant](docs/rules/WRANGLER0001.md): explanation, before/after example, and code fix.
+[Null-forgiving operator hides a possible null value](docs/rules/WRANGLER0001.md): explicit null handling and precedence among the null-forgiving rules.
 
 ### WRANGLER0002
 
-[Null-forgiving operator hides a possible null value](docs/rules/WRANGLER0002.md): explicit null handling and precedence among the null-forgiving rules.
+[Null-forgiving operator fabricates a non-null value](docs/rules/WRANGLER0002.md): meaningful initialization, nullable contracts, and intentional null-input tests.
 
 ### WRANGLER0003
 
-[Null-forgiving operator fabricates a non-null value](docs/rules/WRANGLER0003.md): meaningful initialization, nullable contracts, and intentional null-input tests.
+[Use a not-null assertion instead of the null-forgiving operator in tests](docs/rules/WRANGLER0003.md): supported frameworks, assertion recommendations, and async/nullable limitations.
 
 ### WRANGLER0004
 
-[Use a not-null assertion instead of the null-forgiving operator in tests](docs/rules/WRANGLER0004.md): supported frameworks, assertion recommendations, and async/nullable limitations.
+[Document suppressed diagnostic IDs and titles](docs/rules/WRANGLER0004.md): single/multiple-ID formats, external title catalogs, validation modes, and code-fix limits.
 
 ### WRANGLER0005
 
-[Document suppressed diagnostic IDs and titles](docs/rules/WRANGLER0005.md): single/multiple-ID formats, external title catalogs, validation modes, and code-fix limits.
-
-### WRANGLER0006
-
-[Justify warning suppressions](docs/rules/WRANGLER0006.md): accepted justification locations, field syntax, and policy scope.
+[Justify warning suppressions](docs/rules/WRANGLER0005.md): accepted justification locations, field syntax, and policy scope.
 
 ## Configuration
 
-Every rule supports standard `.editorconfig` severity settings, including `none`, and scoped pragma suppression. WRANGLER0005 and WRANGLER0006 are independent opt-in policies.
+Every rule supports standard `.editorconfig` severity settings, including `none`, and scoped pragma suppression. WRANGLER0004 and WRANGLER0005 are independent opt-in policies.
 
 See [configuration examples](docs/configuration.md) and [suppression guidance](docs/suppressions.md).
 
@@ -72,7 +67,7 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 - [Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) has an opt-in rule for `null!` / `default!`.
 - The .NET SDK's IDE analyzers report `!` that the compiler doesn't need and offer to remove it.
 - StyleCop [SA1404](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1404.md) requires justifications on `SuppressMessage` attributes, not pragma title/reason comments. The related pragma proposal [DotNetAnalyzers/StyleCopAnalyzers#3403](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/3403) motivated similar discussion.
-- The SDK's [IDE0079](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0079?WT.mc_id=8B97120A00B57354) finds unnecessary suppressions; WRANGLER0005/WRANGLER0006 document the suppressions that remain.
+- The SDK's [IDE0079](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0079?WT.mc_id=8B97120A00B57354) finds unnecessary suppressions; WRANGLER0004/WRANGLER0005 document the suppressions that remain.
 
 ## Projects
 

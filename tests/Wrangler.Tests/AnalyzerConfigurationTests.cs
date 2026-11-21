@@ -26,14 +26,10 @@ public sealed class AnalyzerConfigurationTests
     [DataRow("WRANGLER0005", "none")]
     [DataRow("WRANGLER0005", "warning")]
     [DataRow("WRANGLER0005", "error")]
-    [DataRow("WRANGLER0006", "none")]
-    [DataRow("WRANGLER0006", "warning")]
-    [DataRow("WRANGLER0006", "error")]
     public async Task EditorConfig_ConfiguresEachRuleIndependently(string ruleId, string severity)
     {
         const string source = """
-            #pragma warning disable CS0168
-            #pragma warning restore CS0168
+            #pragma warning disable CONTOSO001
 
             class Person
             {
@@ -41,11 +37,6 @@ public sealed class AnalyzerConfigurationTests
 
                 public int NameLength(string? name) => name!.Length;
 
-                public int GetAnswer()
-                {
-                    int answer = 42;
-                    return answer;
-                }
             }
 
             class PersonTests
@@ -59,7 +50,7 @@ public sealed class AnalyzerConfigurationTests
                 }
             }
             """;
-        string[] ruleIds = ["WRANGLER0001", "WRANGLER0002", "WRANGLER0003", "WRANGLER0004", "WRANGLER0005", "WRANGLER0006"];
+        string[] ruleIds = ["WRANGLER0001", "WRANGLER0002", "WRANGLER0003", "WRANGLER0004", "WRANGLER0005"];
         string editorConfig = "root = true\n\n[*.cs]\n" + string.Join(
             "\n",
             ruleIds.Select(id => $"dotnet_diagnostic.{id}.severity = {(id == ruleId ? severity : "warning")}"));
@@ -106,7 +97,7 @@ public sealed class AnalyzerConfigurationTests
 
         ImmutableArray<Diagnostic> diagnostics = await compilation
             .WithAnalyzers(
-                [new MakeConstAnalyzer(), new NullForgivingOperatorAnalyzer(), new PragmaSuppressionAnalyzer()],
+                [new NullForgivingOperatorAnalyzer(), new PragmaSuppressionAnalyzer()],
                 project.AnalyzerOptions)
             .GetAnalyzerDiagnosticsAsync();
 
@@ -124,21 +115,16 @@ public sealed class AnalyzerConfigurationTests
 
             string construct = expectedId switch
             {
-                "WRANGLER0001" => "int answer = 42;",
-                "WRANGLER0002" => "name!",
-                "WRANGLER0003" => "null!",
-                "WRANGLER0004" => "Name!",
-                "WRANGLER0005" or "WRANGLER0006" => "disable",
+                "WRANGLER0001" => "name!",
+                "WRANGLER0002" => "null!",
+                "WRANGLER0003" => "Name!",
+                "WRANGLER0004" or "WRANGLER0005" => "disable",
                 _ => throw new InvalidOperationException($"Unexpected diagnostic ID '{expectedId}'."),
             };
             var expectedSpan = new TextSpan(source.IndexOf(construct, StringComparison.Ordinal), construct.Length);
             Assert.IsTrue(diagnostic.Location.SourceSpan.Length > 0);
             Assert.IsTrue(expectedSpan.Contains(diagnostic.Location.SourceSpan));
             Assert.AreEqual(Assert.ContainsSingle(compilation.SyntaxTrees), diagnostic.Location.SourceTree);
-            if (expectedId == "WRANGLER0001")
-            {
-                StringAssert.Contains(diagnostic.GetMessage(), "answer");
-            }
         }
     }
 
@@ -161,19 +147,19 @@ public sealed class AnalyzerConfigurationTests
         string editorConfig = $"""
             root = true
             [*.cs]
-            dotnet_diagnostic.WRANGLER0005.severity = {titleSeverity}
-            dotnet_diagnostic.WRANGLER0006.severity = {reasonSeverity}
+            dotnet_diagnostic.WRANGLER0004.severity = {titleSeverity}
+            dotnet_diagnostic.WRANGLER0005.severity = {reasonSeverity}
             wrangler_pragma_title_validation = {(configuration == "invalid-mode" ? "unsupported" : "documented")}
             """;
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             "#pragma warning disable CONTOSO001", out Document document, editorConfig,
             catalog: configuration == "invalid-catalog" ? "Invalid catalog" : null);
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Assert.HasCount(titleSeverity == "none" ? 0 : 1, diagnostics.Where(diagnostic => diagnostic.Id == "WRANGLER0005"));
-        Assert.HasCount(reasonSeverity == "none" ? 0 : 1, diagnostics.Where(diagnostic => diagnostic.Id == "WRANGLER0006"));
+        Assert.HasCount(titleSeverity == "none" ? 0 : 1, diagnostics.Where(diagnostic => diagnostic.Id == "WRANGLER0004"));
+        Assert.HasCount(reasonSeverity == "none" ? 0 : 1, diagnostics.Where(diagnostic => diagnostic.Id == "WRANGLER0005"));
         if (titleSeverity != "none" && configuration != "valid")
         {
-            Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == "WRANGLER0005", diagnostics);
+            Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == "WRANGLER0004", diagnostics);
             StringAssert.Contains(diagnostic.GetMessage(), "Invalid");
         }
     }
@@ -188,7 +174,7 @@ public sealed class AnalyzerConfigurationTests
             wrangler_pragma_title_validation = documented
 
             [Scoped.cs]
-            dotnet_diagnostic.WRANGLER0005.severity = error
+            dotnet_diagnostic.WRANGLER0004.severity = error
             wrangler_pragma_title_validation = StRiCt
             """;
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
@@ -198,7 +184,7 @@ public sealed class AnalyzerConfigurationTests
         Assert.HasCount(expectedCount, diagnostics);
         if (expectedCount > 0)
         {
-            Assert.AreEqual("WRANGLER0005", diagnostics[0].Id);
+            Assert.AreEqual("WRANGLER0004", diagnostics[0].Id);
             Assert.AreEqual(DiagnosticSeverity.Error, diagnostics[0].Severity);
             StringAssert.Contains(diagnostics[0].GetMessage(), "catalog entry");
         }

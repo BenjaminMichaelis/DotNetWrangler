@@ -22,8 +22,7 @@ internal sealed class PragmaTitleCatalog(
     {
         ImmutableDictionary<string, string>.Builder titles = ImmutableDictionary.CreateBuilder<string, string>(
             StringComparer.Ordinal);
-        IEnumerable<DiagnosticDescriptor> descriptors = new MakeConstAnalyzer().SupportedDiagnostics
-            .Concat(new NullForgivingOperatorAnalyzer().SupportedDiagnostics)
+        IEnumerable<DiagnosticDescriptor> descriptors = new NullForgivingOperatorAnalyzer().SupportedDiagnostics
             .Concat(new PragmaSuppressionAnalyzer().SupportedDiagnostics);
         foreach (DiagnosticDescriptor descriptor in descriptors)
         {

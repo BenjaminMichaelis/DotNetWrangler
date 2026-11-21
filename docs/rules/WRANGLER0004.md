@@ -1,63 +1,100 @@
-# WRANGLER0004: Use a not-null assertion instead of the null-forgiving operator in tests
+# WRANGLER0004: Document suppressed diagnostic IDs and titles
 
 [Analyzer catalog](../../README.md#analyzer-catalog) | [Configuration](../configuration.md) | [Suppressions](../suppressions.md)
 
-Default severity: **Warning**. Code fix: **None**.
+Default severity: **Disabled (opt-in warning)**. Code fix: **Document suppressed rule titles**, when titles are available.
 
 ## Why this rule exists
 
-Inside test classes, use the framework's not-null assertion instead of `!`. An unexpected null should fail with a clear assertion message, not a later `NullReferenceException`.
+A warning ID alone does not explain which rule is being suppressed. Require explicit IDs and human-readable rule titles so readers can understand the suppression without looking them up.
+
+This rule is independent of [WRANGLER0005](WRANGLER0005.md), which checks the reason for the exception.
+
+## Enable the rule
+
+```ini
+[*.cs]
+dotnet_diagnostic.WRANGLER0004.severity = warning
+```
 
 ## Reported code
 
-In an MSTest test method, given a nullable `actual` value:
-
 ```csharp
-Assert.AreEqual(4, actual!.Length);
+#pragma warning disable WRANGLER0002
 ```
+
+Blanket `#pragma warning disable` directives without IDs also receive a diagnostic.
 
 ## Preferred code
 
-Assert the expectation before using the value:
+Every active `#pragma warning disable` must list explicit diagnostic IDs and name each rule in a same-line `//` comment. Use the diagnostic title, not the analyzer class name.
+
+With one ID, repeating the ID in the comment is unnecessary; this is the format Visual Studio generates:
 
 ```csharp
-Assert.IsNotNull(actual);
-Assert.AreEqual(4, actual.Length);
+#pragma warning disable WRANGLER0002 // Null-forgiving operator fabricates a non-null value
 ```
 
-Choose the assertion for your framework below. Nullable-warning handling depends on the assertion API and framework tooling; not every assertion updates compiler null-state.
+A labeled `WRANGLER0002: Title` is also accepted. Multiple distinct IDs require one labeled title per ID, in any order:
 
-## Framework compatibility
+```csharp
+#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: Null-forgiving operator hides a possible null value; WRANGLER0002: Null-forgiving operator fabricates a non-null value
+```
 
-Framework | Recognized test attributes | Recommended assertion
-----------|----------------------------|----------------------
-MSTest | `[TestMethod]`, including `[DataTestMethod]` | `Assert.IsNotNull(value)`
-xUnit | `[Fact]`, including `[Theory]` | `Assert.NotNull(value)`
-NUnit 3.x, 4.x, 5.x | `[Test]`, `[TestCase]`, `[TestCaseSource]`, `[Theory]` | `Assert.That(value, Is.Not.Null)`
-TUnit 1.x | `[Test]` from `TUnit.Core` | `await Assert.That(value).IsNotNull()`
+These examples show the disable-line syntax. Keep each suppression narrowly scoped with a matching restore, as in the [complete suppression example](../suppressions.md#example-testing-a-null-argument-contract).
 
-A class is recognized by test methods declared on it or a base class, including derived test attributes. Detection uses referenced framework type symbols rather than package-version strings. Merely referencing a test framework, naming a class `*Tests`, or defining framework lookalikes in analyzed source is not sufficient.
+## Title matching
 
-NUnit's [constraint syntax](https://docs.nunit.org/articles/nunit/writing-tests/constraints/NullConstraint.html) works across all three supported major versions, avoiding the classic-assertion changes in NUnit 4.0 and 4.5 (the latter also requires C# 14 for the restored classic syntax). NUnit 2.x and pre-1.0 TUnit are outside the documented compatibility targets; no per-minor or per-patch version branches are needed.
+Wrangler titles are checked against the descriptors' invariant-culture titles. Matching is case-sensitive and ignores surrounding whitespace, not punctuation. Numeric compiler warnings such as `0168` are matched as `CS0168`; repeated equivalent IDs count only once.
 
-### TUnit and async contexts
+Semicolons are ordinary title text except before a `Justification:` field or, for multiple IDs, a declared `ID:` label. Those are reserved metadata boundaries. Catalog titles cannot contain the reserved justification field; use separate directives if a title contains another suppressed ID's label.
 
-TUnit's [assertions must be awaited](https://tunit.dev/docs/assertions/awaiting/). TUnit also requires `TUnit.Assertions` and its extension namespace.
+## External title catalogs
 
-Advice is limited to asynchronous methods, local functions, and lambdas where awaiting is possible. The nearest function boundary matters: an async outer method does not make a synchronous nested helper awaitable.
+By default, compiler and third-party IDs require a nonempty title, without claiming its wording has been verified. To verify external titles too, supply an optional `Wrangler.PragmaTitles.txt` additional file:
 
-Constructors, initializers, getters, synchronous helpers, and await-forbidden contexts such as `lock` bodies receive WRANGLER0002 instead. Enclosing unsafe contexts are also considered so the analyzer does not recommend an illegal `await`.
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Wrangler.PragmaTitles.txt" />
+</ItemGroup>
+```
 
-### Nullable-warning behavior
+```text
+# Project-approved external titles
+CONTOSO001 = Prefer C# interfaces; avoid synchronous calls
+```
 
-MSTest/xUnit assertions can expose nullable annotations. For NUnit constraint assertions, [NUnit.Analyzers' NUnit3001 suppressor](https://docs.nunit.org/articles/nunit-analyzers/NUnit3001.html) handles subsequent nullable warnings, except inside multiple-assert blocks where execution can continue after a failed assertion.
+Entries use `ID = Title`, splitting at the first equals sign and trimming surrounding whitespace. Titles preserve `C#`, semicolons and further equals signs; there is no quoting or inline-comment syntax. Blank lines and lines beginning with `#` are ignored.
 
-TUnit provides an assertion suppressor and supports [capturing the validated return value](https://tunit.dev/docs/assertions/awaiting/#using-return-values-from-awaited-assertions). Its suppressor does not change the compiler's null-state.
+Use named IDs, including normalized `CS0168`, not bare numbers. Entries for `WRANGLER####` are reserved for Wrangler.
 
-These are different mechanisms. Do not assume every assertion syntax or older framework version eliminates nullable warnings by itself.
+Files with this name are merged; duplicate IDs, malformed entries and unreadable files reject the catalog rather than silently accepting a partial result. External entries define project-approved wording; they are not automatically synchronized with package updates or localized IDE titles.
 
-## Fallbacks and exceptions
+### Validation modes
 
-`!` elsewhere in a test project receives WRANGLER0002. `null!` and reference-type defaults still receive WRANGLER0003; other defaults receive WRANGLER0002. See the [rule selection table](WRANGLER0002.md#which-null-forgiving-rule-applies).
+```ini
+[*.cs]
+dotnet_diagnostic.WRANGLER0004.severity = warning
+wrangler_pragma_title_validation = documented
+```
 
-Intentional exceptions, including null-input tests, still receive diagnostics. Use a [scoped suppression with a reason](../suppressions.md).
+Mode | Behavior
+-----|---------
+`documented` (default) | Verify Wrangler and supplied catalog titles; require nonempty titles for all other IDs.
+`strict` | Also require a catalog entry for every compiler or third-party ID.
+
+The mode can be scoped with ordinary `.editorconfig` sections. Invalid modes or catalogs produce WRANGLER0004 at active disable directives, so the file's normal severity and suppression settings apply.
+
+No pragmas means no configuration diagnostic. These configuration errors do not prevent WRANGLER0005 from checking reasons.
+
+## Code-fix limits
+
+The code fix inserts available titles and corrects explicitly labeled titles, preserving justification text, line endings and suppression scope.
+
+For external analyzers it can obtain titles from the project's Roslyn analyzer references; build-time verification still needs a catalog. Strict mode does not offer a title-only fix for a missing catalog entry.
+
+Ambiguous free-text comments, unavailable/conflicting titles and blanket disables have no automatic fix. The fix never invents suppression IDs or a justification.
+
+## Policy boundaries
+
+See [suppression policy boundaries](../suppressions.md#policy-boundaries) for generated/inactive code, restore directives, and suppression of the policy itself.

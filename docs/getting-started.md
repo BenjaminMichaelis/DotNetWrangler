@@ -46,41 +46,19 @@ Otherwise, add a package reference to `Directory.Build.props`:
 
 `dotnet add package` adds this setting for you, but a hand-written reference needs it explicitly. A global package reference applies it automatically.
 
-Test projects receive diagnostics too. That's intended: [WRANGLER0004](rules/WRANGLER0004.md) targets test code.
+Test projects receive diagnostics too. That's intended: [WRANGLER0003](rules/WRANGLER0003.md) targets test code.
 
 ### Compiler compatibility
 
 Wrangler runs in your SDK's or IDE's Roslyn compiler. If you see `CS9057`, the compiler is too old for the installed package. Select a newer [.NET SDK](https://dotnet.microsoft.com/download) for builds or update your IDE for live analysis. You don't need to change your project's target framework.
 
-## Try a diagnostic
-
-Add this method inside a class in the project where you installed Wrangler:
-
-```csharp
-static int GetRetryLimit()
-{
-    int retryLimit = 3;
-    return retryLimit;
-}
-```
-
-Run `dotnet build`. [WRANGLER0001](rules/WRANGLER0001.md) reports that `retryLimit` can be made constant:
-
-```csharp
-static int GetRetryLimit()
-{
-    const int retryLimit = 3;
-    return retryLimit;
-}
-```
-
-WRANGLER0001 through WRANGLER0004 are warnings by default. The two pragma policies are disabled until you [enable them explicitly](configuration.md#enable-the-optional-pragma-policies).
+WRANGLER0001 through WRANGLER0003 are warnings by default. The two pragma policies are disabled until you [enable them explicitly](configuration.md#enable-the-optional-pragma-policies).
 
 ## Choose your policy
 
 Use [configuration](configuration.md) to set each rule's severity independently. For a deliberate exception, use a [scoped suppression with a reason](suppressions.md) rather than disabling the rule everywhere.
 
-Null-forgiving diagnostics intentionally include some valid uses of `!`, including null-input argument-validation tests. The [rule selection table](rules/WRANGLER0002.md#which-null-forgiving-rule-applies) explains which diagnostic to expect.
+Null-forgiving diagnostics intentionally include some valid uses of `!`, including null-input argument-validation tests. The [rule selection table](rules/WRANGLER0001.md#which-null-forgiving-rule-applies) explains which diagnostic to expect.
 
 ## Use the analyzers from source
 

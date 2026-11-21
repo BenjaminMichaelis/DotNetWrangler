@@ -13,9 +13,8 @@ The following `.editorconfig` section makes the default policy explicit. You do 
 dotnet_diagnostic.WRANGLER0001.severity = warning
 dotnet_diagnostic.WRANGLER0002.severity = warning
 dotnet_diagnostic.WRANGLER0003.severity = warning
-dotnet_diagnostic.WRANGLER0004.severity = warning
+dotnet_diagnostic.WRANGLER0004.severity = none
 dotnet_diagnostic.WRANGLER0005.severity = none
-dotnet_diagnostic.WRANGLER0006.severity = none
 ```
 
 Add settings to your existing `.editorconfig`, or create one at the appropriate directory level.
@@ -36,14 +35,14 @@ Add these settings to the applicable section to enable both policies:
 
 ```ini
 [*.cs]
+dotnet_diagnostic.WRANGLER0004.severity = warning
 dotnet_diagnostic.WRANGLER0005.severity = warning
-dotnet_diagnostic.WRANGLER0006.severity = warning
 ```
 
 These policies are independent:
 
-- [WRANGLER0005](rules/WRANGLER0005.md) requires explicit suppression IDs and rule titles.
-- [WRANGLER0006](rules/WRANGLER0006.md) requires an explicit, nonempty `Justification:` field.
+- [WRANGLER0004](rules/WRANGLER0004.md) requires explicit suppression IDs and rule titles.
+- [WRANGLER0005](rules/WRANGLER0005.md) requires an explicit, nonempty `Justification:` field.
 
 Either can be enabled without the other. See [suppressions](suppressions.md) for an example that satisfies both.
 
@@ -53,15 +52,15 @@ Ordinary `.editorconfig` sections let you choose a different severity for a subs
 
 ```ini
 [tests/**/*.cs]
-dotnet_diagnostic.WRANGLER0002.severity = error
+dotnet_diagnostic.WRANGLER0001.severity = error
 ```
 
 Paths are relative to the `.editorconfig` file. For individual intentional exceptions, prefer a [scoped pragma](suppressions.md).
 
 ## External pragma titles
 
-WRANGLER0005 verifies Wrangler titles automatically. It can also validate compiler and third-party rule titles using an optional `Wrangler.PragmaTitles.txt` additional file.
+WRANGLER0004 verifies Wrangler titles automatically. It can also validate compiler and third-party rule titles using an optional `Wrangler.PragmaTitles.txt` additional file.
 
 The `wrangler_pragma_title_validation` option controls whether unmapped external IDs need only a title (`documented`, the default) or also need a catalog mapping (`strict`). It does not enable the rule.
 
-See [WRANGLER0005: external title catalogs](rules/WRANGLER0005.md#external-title-catalogs) for the file format, project setup, and validation rules.
+See [WRANGLER0004: external title catalogs](rules/WRANGLER0004.md#external-title-catalogs) for the file format, project setup, and validation rules.
