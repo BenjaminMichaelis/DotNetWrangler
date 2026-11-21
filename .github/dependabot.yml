@@ -4,6 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      nuget-dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: dotnet-sdk
     directory: /
     schedule:
@@ -12,3 +16,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"

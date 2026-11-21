@@ -29,10 +29,9 @@ public sealed class MakeConstTests
             """;
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(1, diagnostics.Length);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(document));
 
-        await AssertCodeFixAsync(document, diagnostics[0], SpecialType.System_Int32, 0);
+        await AssertCodeFixAsync(document, diagnostic, SpecialType.System_Int32, 0);
     }
 
     [TestMethod]
@@ -49,10 +48,9 @@ public sealed class MakeConstTests
             """;
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(1, diagnostics.Length);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(document));
 
-        await AssertCodeFixAsync(document, diagnostics[0], SpecialType.System_String, "text");
+        await AssertCodeFixAsync(document, diagnostic, SpecialType.System_String, "text");
     }
 
     [TestMethod]
@@ -71,7 +69,7 @@ public sealed class MakeConstTests
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsEmpty(diagnostics);
     }
 
     [TestMethod]
@@ -89,7 +87,7 @@ public sealed class MakeConstTests
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsEmpty(diagnostics);
     }
 
     [TestMethod]
@@ -108,7 +106,7 @@ public sealed class MakeConstTests
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsEmpty(diagnostics);
     }
 
     [TestMethod]
@@ -126,7 +124,7 @@ public sealed class MakeConstTests
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsEmpty(diagnostics);
     }
 
     [TestMethod]
@@ -144,7 +142,52 @@ public sealed class MakeConstTests
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsEmpty(diagnostics);
+    }
+
+    [TestMethod]
+    public async Task FixAll_MakesEveryEligibleLocalConstant()
+    {
+        const string source = """
+            class Program
+            {
+                static int Calculate()
+                {
+                    int first = 1;
+                    int second = 2;
+                    return first + second;
+                }
+            }
+            """;
+
+        using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
+        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
+        Assert.HasCount(2, diagnostics);
+
+        var provider = new MakeConstCodeFixProvider();
+        var context = new FixAllContext(
+            document,
+            provider,
+            FixAllScope.Document,
+            "Make constant",
+            provider.FixableDiagnosticIds,
+            new FixedDiagnostics(diagnostics),
+            CancellationToken.None);
+        CodeAction action = await provider.GetFixAllProvider().GetFixAsync(context)
+            ?? throw new InvalidOperationException("No Fix All action.");
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
+
+        SyntaxNode root = await changed.GetSyntaxRootAsync()
+            ?? throw new InvalidOperationException("The changed document has no syntax root.");
+        SemanticModel semanticModel = await changed.GetSemanticModelAsync()
+            ?? throw new InvalidOperationException("The changed document has no semantic model.");
+        ILocalSymbol[] locals = root.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .Select(variable => Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(variable)))
+            .ToArray();
+        Assert.HasCount(2, locals);
+        Assert.DoesNotContain(local => !local.IsConst, locals);
+        Assert.IsEmpty(await GetAnalyzerDiagnosticsAsync(changed));
     }
 
     [TestMethod]
@@ -163,33 +206,33 @@ public sealed class MakeConstTests
 
         using AdhocWorkspace workspace = CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(document);
-        Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.GetMessage().Contains("'second'", StringComparison.Ordinal)));
+        Assert.DoesNotContain(diagnostic => diagnostic.GetMessage().Contains("'second'", StringComparison.Ordinal), diagnostics);
 
         SyntaxNode originalRoot = await document.GetSyntaxRootAsync()
             ?? throw new InvalidOperationException("The document has no syntax root.");
-        VariableDeclaratorSyntax originalSecond = originalRoot.DescendantNodes()
-            .OfType<VariableDeclaratorSyntax>()
-            .Single(variable => variable.Identifier.ValueText == "second");
+        VariableDeclaratorSyntax originalSecond = Assert.ContainsSingle(
+            variable => variable.Identifier.ValueText == "second",
+            originalRoot.DescendantNodes().OfType<VariableDeclaratorSyntax>());
         ExpressionSyntax originalInitializer = originalSecond.Initializer?.Value
             ?? throw new InvalidOperationException("The original runtime-valued variable has no initializer.");
-        ExpressionStatementSyntax originalUse = originalRoot.DescendantNodes().OfType<ExpressionStatementSyntax>().Single();
+        ExpressionStatementSyntax originalUse = Assert.ContainsSingle(originalRoot.DescendantNodes().OfType<ExpressionStatementSyntax>());
 
         foreach (Diagnostic diagnostic in diagnostics)
         {
             Assert.AreEqual(MakeConstAnalyzer.DiagnosticId, diagnostic.Id);
             Document changedDocument = await ApplyFirstCodeFixAsync(document, diagnostic);
-            Assert.AreEqual(0, (await GetAnalyzerDiagnosticsAsync(changedDocument)).Length);
+            Assert.IsEmpty(await GetAnalyzerDiagnosticsAsync(changedDocument));
 
             SyntaxNode changedRoot = await changedDocument.GetSyntaxRootAsync()
                 ?? throw new InvalidOperationException("The fixed document has no syntax root.");
             SemanticModel semanticModel = await changedDocument.GetSemanticModelAsync()
                 ?? throw new InvalidOperationException("The fixed document has no semantic model.");
-            VariableDeclaratorSyntax first = changedRoot.DescendantNodes()
-                .OfType<VariableDeclaratorSyntax>()
-                .Single(variable => variable.Identifier.ValueText == "first");
-            VariableDeclaratorSyntax second = changedRoot.DescendantNodes()
-                .OfType<VariableDeclaratorSyntax>()
-                .Single(variable => variable.Identifier.ValueText == "second");
+            VariableDeclaratorSyntax first = Assert.ContainsSingle(
+                variable => variable.Identifier.ValueText == "first",
+                changedRoot.DescendantNodes().OfType<VariableDeclaratorSyntax>());
+            VariableDeclaratorSyntax second = Assert.ContainsSingle(
+                variable => variable.Identifier.ValueText == "second",
+                changedRoot.DescendantNodes().OfType<VariableDeclaratorSyntax>());
             ILocalSymbol firstSymbol = Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(first));
             ILocalSymbol secondSymbol = Assert.IsInstanceOfType<ILocalSymbol>(semanticModel.GetDeclaredSymbol(second));
             Assert.IsTrue(firstSymbol.IsConst);
@@ -198,7 +241,8 @@ public sealed class MakeConstTests
             ExpressionSyntax changedInitializer = second.Initializer?.Value
                 ?? throw new InvalidOperationException("The fixed runtime-valued variable has no initializer.");
             Assert.IsTrue(originalInitializer.IsEquivalentTo(changedInitializer));
-            Assert.IsTrue(originalUse.IsEquivalentTo(changedRoot.DescendantNodes().OfType<ExpressionStatementSyntax>().Single()));
+            ExpressionStatementSyntax changedUse = Assert.ContainsSingle(changedRoot.DescendantNodes().OfType<ExpressionStatementSyntax>());
+            Assert.IsTrue(originalUse.IsEquivalentTo(changedUse));
         }
     }
 
@@ -210,10 +254,9 @@ public sealed class MakeConstTests
     {
         SyntaxNode originalRoot = await document.GetSyntaxRootAsync()
             ?? throw new InvalidOperationException("The document has no syntax root.");
-        LocalDeclarationStatementSyntax originalDeclaration = originalRoot.DescendantNodes()
-            .OfType<LocalDeclarationStatementSyntax>()
-            .Single();
-        VariableDeclaratorSyntax originalVariable = originalDeclaration.Declaration.Variables.Single();
+        LocalDeclarationStatementSyntax originalDeclaration = Assert.ContainsSingle(
+            originalRoot.DescendantNodes().OfType<LocalDeclarationStatementSyntax>());
+        VariableDeclaratorSyntax originalVariable = Assert.ContainsSingle(originalDeclaration.Declaration.Variables);
         Assert.AreEqual(MakeConstAnalyzer.DiagnosticId, diagnostic.Id);
         StringAssert.Contains(diagnostic.GetMessage(), originalVariable.Identifier.ValueText);
         Assert.AreEqual(originalRoot.SyntaxTree, diagnostic.Location.SourceTree);
@@ -221,13 +264,12 @@ public sealed class MakeConstTests
         Assert.IsTrue(originalDeclaration.Span.Contains(diagnostic.Location.SourceSpan));
 
         Document changedDocument = await ApplyFirstCodeFixAsync(document, diagnostic);
-        Assert.AreEqual(0, (await GetAnalyzerDiagnosticsAsync(changedDocument)).Length);
+        Assert.IsEmpty(await GetAnalyzerDiagnosticsAsync(changedDocument));
         SyntaxNode changedRoot = await changedDocument.GetSyntaxRootAsync()
             ?? throw new InvalidOperationException("The fixed document has no syntax root.");
-        LocalDeclarationStatementSyntax changedDeclaration = changedRoot.DescendantNodes()
-            .OfType<LocalDeclarationStatementSyntax>()
-            .Single();
-        VariableDeclaratorSyntax changedVariable = changedDeclaration.Declaration.Variables.Single();
+        LocalDeclarationStatementSyntax changedDeclaration = Assert.ContainsSingle(
+            changedRoot.DescendantNodes().OfType<LocalDeclarationStatementSyntax>());
+        VariableDeclaratorSyntax changedVariable = Assert.ContainsSingle(changedDeclaration.Declaration.Variables);
         Assert.AreEqual(originalVariable.Identifier.ValueText, changedVariable.Identifier.ValueText);
         SemanticModel semanticModel = await changedDocument.GetSemanticModelAsync()
             ?? throw new InvalidOperationException("The fixed document has no semantic model.");
@@ -247,10 +289,10 @@ public sealed class MakeConstTests
             (action, _) => actions.Add(action),
             CancellationToken.None);
         await new MakeConstCodeFixProvider().RegisterCodeFixesAsync(context);
-        Assert.IsTrue(actions.Count > 0, "No code fix was registered for the diagnostic.");
+        Assert.IsNotEmpty(actions, "No code fix was registered for the diagnostic.");
 
         IEnumerable<CodeActionOperation> operations = await actions[0].GetOperationsAsync(CancellationToken.None);
-        ApplyChangesOperation change = operations.OfType<ApplyChangesOperation>().Single();
+        ApplyChangesOperation change = Assert.ContainsSingle(operations.OfType<ApplyChangesOperation>());
         return change.ChangedSolution.GetDocument(document.Id)
             ?? throw new InvalidOperationException("The code fix removed the document.");
     }
@@ -274,7 +316,7 @@ public sealed class MakeConstTests
                 "TestProject",
                 "TestProject",
                 LanguageNames.CSharp,
-                parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+                parseOptions: new CSharpParseOptions(LanguageVersion.Latest),
                 compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
                 metadataReferences: references))
             .AddDocument(documentId, "Test.cs", SourceText.From(source));
@@ -296,9 +338,27 @@ public sealed class MakeConstTests
         Diagnostic[] errors = compilation.GetDiagnostics()
             .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
-        Assert.AreEqual(0, errors.Length, string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString())));
+        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString())));
         return await compilation
             .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new MakeConstAnalyzer()))
             .GetAnalyzerDiagnosticsAsync();
+    }
+
+    private sealed class FixedDiagnostics(ImmutableArray<Diagnostic> diagnostics) : FixAllContext.DiagnosticProvider
+    {
+        public override Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(
+            Document document,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IEnumerable<Diagnostic>>(diagnostics);
+
+        public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(
+            Project project,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(Enumerable.Empty<Diagnostic>());
+
+        public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(
+            Project project,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IEnumerable<Diagnostic>>(diagnostics);
     }
 }
