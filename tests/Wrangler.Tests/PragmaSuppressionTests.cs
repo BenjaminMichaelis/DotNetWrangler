@@ -32,7 +32,7 @@ public sealed class PragmaSuppressionTests
     public async Task DocumentedSuppression_DoesNotReport(string source)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
     [TestMethod]
@@ -88,10 +88,9 @@ public sealed class PragmaSuppressionTests
             + "#pragma warning disable WRANGLER0003 // " + Title3 + "\n"
             + "#pragma warning disable WRANGLER0002 // " + Title2;
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
-        ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual("WRANGLER0006", diagnostics[0].Id);
-        Assert.AreEqual(2, diagnostics[0].Location.GetLineSpan().StartLinePosition.Line);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.AreEqual("WRANGLER0006", diagnostic.Id);
+        Assert.AreEqual(2, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
     }
 
     [TestMethod]
@@ -102,7 +101,7 @@ public sealed class PragmaSuppressionTests
     public async Task InactiveGeneratedAndRestoreDirectives_AreIgnored(string source, string fileName)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document, fileName: fileName);
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
     [TestMethod]
@@ -114,7 +113,7 @@ public sealed class PragmaSuppressionTests
     public async Task IncompleteDirectives_DoNotThrowOrReportMetadata(string source)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document, assertValidSource: false)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document, assertValidSource: false));
     }
 
     [TestMethod]
@@ -122,7 +121,7 @@ public sealed class PragmaSuppressionTests
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             "#pragma warning disable WRANGLER0003", out Document document, editorConfig: "root = true\n[*.cs]");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
     [TestMethod]
@@ -136,7 +135,7 @@ public sealed class PragmaSuppressionTests
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             source, out Document document, catalog: $"# Catalog comment\n{id} = {title}\n",
             editorConfig: PragmaTestHelper.EnabledConfig + "\nwrangler_pragma_title_validation = strict");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
     [TestMethod]
@@ -148,10 +147,9 @@ public sealed class PragmaSuppressionTests
             "#pragma warning disable CONTOSO001 // Wrong" + Reason, out Document document,
             catalog: "CONTOSO001 = Prefer C# interfaces",
             editorConfig: PragmaTestHelper.EnabledConfig + $"\nwrangler_pragma_title_validation = {mode}");
-        ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual("WRANGLER0005", diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), "Prefer C# interfaces");
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.AreEqual("WRANGLER0005", diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), "Prefer C# interfaces");
     }
 
     [TestMethod]
@@ -167,11 +165,10 @@ public sealed class PragmaSuppressionTests
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             "#pragma warning disable CONTOSO001 // A title" + Reason, out Document document, catalog: catalog);
-        ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual("WRANGLER0005", diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), message);
-        Assert.AreEqual("disable", (await document.GetTextAsync()).ToString(diagnostics[0].Location.SourceSpan));
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.AreEqual("WRANGLER0005", diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), message);
+        Assert.AreEqual("disable", (await document.GetTextAsync()).ToString(diagnostic.Location.SourceSpan));
     }
 
     [TestMethod]
@@ -179,10 +176,9 @@ public sealed class PragmaSuppressionTests
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             "#pragma warning disable CONTOSO001 // A title" + Reason, out Document document);
-        ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(
-            document, additionalFiles: [new UnreadableCatalog()]);
-        Assert.AreEqual(1, diagnostics.Length);
-        StringAssert.Contains(diagnostics[0].GetMessage(), "Cannot read");
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(
+            document, additionalFiles: [new UnreadableCatalog()]));
+        StringAssert.Contains(diagnostic.GetMessage(), "Cannot read");
     }
 
     [TestMethod]
@@ -195,9 +191,9 @@ public sealed class PragmaSuppressionTests
             "Wrangler.PragmaTitles.txt", SourceText.From("CONTOSO001 = Second title"),
             filePath: Path.Combine(Path.GetTempPath(), "OtherCatalog", "Wrangler.PragmaTitles.txt"))
             .Project.GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
         StringAssert.Contains(diagnostic.GetMessage(), "Duplicate");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic)).Count);
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
@@ -211,14 +207,13 @@ public sealed class PragmaSuppressionTests
             "Wrangler.PragmaTitles.txt", SourceText.From("CONTOSO002 = Second title"),
             filePath: Path.Combine(Path.GetTempPath(), "OtherCatalog", "Wrangler.PragmaTitles.txt"))
             .Project.GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
-        List<CodeAction> actions = await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic);
-        Assert.AreEqual(1, actions.Count);
-        Document changed = await PragmaTestHelper.ApplyAsync(document, actions[0]);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        CodeAction action = Assert.ContainsSingle(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(
             "#pragma warning disable CONTOSO001, CONTOSO002 // CONTOSO001: First title; CONTOSO002: Second title; Justification: Intentional.",
             (await changed.GetTextAsync()).ToString());
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(changed)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(changed));
     }
 
     [TestMethod]
@@ -236,14 +231,14 @@ public sealed class PragmaSuppressionTests
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             source, out Document document,
             editorConfig: PragmaTestHelper.EnabledConfig + "\nwrangler_pragma_title_validation = strict");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
 
         string incorrectTitles = string.Join("\n", descriptors.Select(descriptor =>
             $"#pragma warning disable {descriptor.Id} // Incorrect title{Reason}\n#pragma warning restore {descriptor.Id}"));
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(
             document.WithText(SourceText.From(incorrectTitles)));
-        Assert.AreEqual(descriptors.Length, diagnostics.Length);
-        Assert.IsTrue(diagnostics.All(diagnostic => diagnostic.Id == "WRANGLER0005"));
+        Assert.HasCount(descriptors.Length, diagnostics);
+        Assert.DoesNotContain(diagnostic => diagnostic.Id != "WRANGLER0005", diagnostics);
         for (int index = 0; index < descriptors.Length; index++)
         {
             StringAssert.Contains(diagnostics[index].GetMessage(), $"'{descriptors[index].Id}'");
@@ -262,8 +257,8 @@ public sealed class PragmaSuppressionTests
             + $"#pragma warning disable WRANGLER0003 // {violation}";
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document, includeSuppressed: true);
-        Assert.AreEqual(2, diagnostics.Length);
-        Assert.IsTrue(diagnostics.All(diagnostic => diagnostic.Id == id));
+        Assert.HasCount(2, diagnostics);
+        Assert.DoesNotContain(diagnostic => diagnostic.Id != id, diagnostics);
         Assert.IsTrue(diagnostics[0].IsSuppressed);
         Assert.IsFalse(diagnostics[1].IsSuppressed);
         Assert.AreEqual(3, diagnostics[1].Location.GetLineSpan().StartLinePosition.Line);
@@ -288,7 +283,7 @@ public sealed class PragmaSuppressionTests
             SyntaxFactory.CarriageReturnLineFeed));
         document = document.WithSyntaxRoot(Formatter.Format(root, workspace));
         StringAssert.Contains((await document.GetTextAsync()).ToString(), "disable WRANGLER0003 // " + Title3);
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(document)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
     [TestMethod]
@@ -306,8 +301,9 @@ public sealed class PragmaSuppressionTests
             directive, SyntaxFactory.Space, SyntaxFactory.Comment("/* note */"), SyntaxFactory.CarriageReturnLineFeed));
         document = document.WithSyntaxRoot(Formatter.Format(root, workspace));
         StringAssert.Contains((await document.GetTextAsync()).ToString(), "disable WRANGLER0003 /* note */");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single(diagnostic => diagnostic.Id == "WRANGLER0005");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic)).Count);
+        Diagnostic diagnostic = Assert.ContainsSingle(
+            item => item.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
@@ -327,14 +323,15 @@ public sealed class PragmaSuppressionTests
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> before = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Diagnostic diagnostic = before.Single(diagnostic => diagnostic.Id == "WRANGLER0005");
-        List<CodeAction> actions = await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic);
-        Assert.AreEqual(1, actions.Count);
-        Document changed = await PragmaTestHelper.ApplyAsync(document, actions[0]);
+        Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == "WRANGLER0005", before);
+        CodeAction action = Assert.ContainsSingle(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(expected, (await changed.GetTextAsync()).ToString());
         ImmutableArray<Diagnostic> after = await PragmaTestHelper.GetDiagnosticsAsync(changed);
-        Assert.IsFalse(after.Any(diagnostic => diagnostic.Id == "WRANGLER0005"));
-        Assert.AreEqual(before.Count(diagnostic => diagnostic.Id == "WRANGLER0006"), after.Count(diagnostic => diagnostic.Id == "WRANGLER0006"));
+        Assert.DoesNotContain(diagnostic => diagnostic.Id == "WRANGLER0005", after);
+        Assert.HasCount(
+            before.Count(diagnostic => diagnostic.Id == "WRANGLER0006"),
+            after.Where(diagnostic => diagnostic.Id == "WRANGLER0006"));
     }
 
     [TestMethod]
@@ -348,8 +345,9 @@ public sealed class PragmaSuppressionTests
     public async Task AmbiguousOrUnknownMetadata_HasNoAutomaticFix(string source)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single(diagnostic => diagnostic.Id == "WRANGLER0005");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic)).Count);
+        Diagnostic diagnostic = Assert.ContainsSingle(
+            item => item.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
@@ -359,14 +357,13 @@ public sealed class PragmaSuppressionTests
             "#pragma warning disable CONTOSO001 // Justification: Intentional.", out Document document);
         document = document.Project.AddAnalyzerReference(new AnalyzerImageReference([new ExternalAnalyzer("Prefer C# interfaces; avoid blocking")]))
             .GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
-        List<CodeAction> actions = await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic);
-        Assert.AreEqual(1, actions.Count);
-        Document changed = await PragmaTestHelper.ApplyAsync(document, actions[0]);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        CodeAction action = Assert.ContainsSingle(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(
             "#pragma warning disable CONTOSO001 // Prefer C# interfaces; avoid blocking; Justification: Intentional.",
             (await changed.GetTextAsync()).ToString());
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(changed)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(changed));
     }
 
     [TestMethod]
@@ -377,14 +374,13 @@ public sealed class PragmaSuppressionTests
             catalog: "CONTOSO001 = Prefer C# interfaces; allow x = y");
         document = document.Project.AddAnalyzerReference(new AnalyzerImageReference([new ExternalAnalyzer("Different package title")]))
             .GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
-        List<CodeAction> actions = await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic);
-        Assert.AreEqual(1, actions.Count);
-        Document changed = await PragmaTestHelper.ApplyAsync(document, actions[0]);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        CodeAction action = Assert.ContainsSingle(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(
             "#pragma warning disable CONTOSO001 // Prefer C# interfaces; allow x = y" + Reason,
             (await changed.GetTextAsync()).ToString());
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(changed)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(changed));
     }
 
     [TestMethod]
@@ -395,8 +391,8 @@ public sealed class PragmaSuppressionTests
         document = document.Project.AddAnalyzerReference(new AnalyzerImageReference(
             [new ExternalAnalyzer("First title"), new ExternalAnalyzer("Conflicting title")]))
             .GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic)).Count);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
@@ -407,14 +403,13 @@ public sealed class PragmaSuppressionTests
         document = document.Project.AddAnalyzerReference(new AnalyzerImageReference(
             [new ExternalAnalyzer(null), new ExternalAnalyzer("Available title")]))
             .GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
-        List<CodeAction> actions = await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic);
-        Assert.AreEqual(1, actions.Count);
-        Document changed = await PragmaTestHelper.ApplyAsync(document, actions[0]);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        CodeAction action = Assert.ContainsSingle(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
+        Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(
             "#pragma warning disable CONTOSO001 // Available title; Justification: Intentional.",
             (await changed.GetTextAsync()).ToString());
-        Assert.AreEqual(0, (await PragmaTestHelper.GetDiagnosticsAsync(changed)).Length);
+        Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(changed));
     }
 
     [TestMethod]
@@ -429,8 +424,8 @@ public sealed class PragmaSuppressionTests
             "#pragma warning disable CONTOSO001 // Justification: Intentional.", out Document document);
         document = document.Project.AddAnalyzerReference(new AnalyzerImageReference([new ExternalAnalyzer(title)]))
             .GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic)).Count);
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
@@ -441,9 +436,9 @@ public sealed class PragmaSuppressionTests
             editorConfig: PragmaTestHelper.EnabledConfig + "\nwrangler_pragma_title_validation = strict");
         document = document.Project.AddAnalyzerReference(new AnalyzerImageReference([new ExternalAnalyzer("A documented title")]))
             .GetDocument(document.Id) ?? throw new InvalidOperationException("Missing document.");
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single();
+        Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
         StringAssert.Contains(diagnostic.GetMessage(), "catalog entry");
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic)).Count);
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
@@ -451,9 +446,10 @@ public sealed class PragmaSuppressionTests
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             "#pragma warning disable WRANGLER0003", out Document document);
-        Diagnostic diagnostic = (await PragmaTestHelper.GetDiagnosticsAsync(document)).Single(diagnostic => diagnostic.Id == "WRANGLER0005");
+        Diagnostic diagnostic = Assert.ContainsSingle(
+            item => item.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(document));
         Document changed = document.WithText(SourceText.From("class Changed { }"));
-        Assert.AreEqual(0, (await PragmaTestHelper.GetCodeActionsAsync(changed, diagnostic)).Count);
+        Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(changed, diagnostic));
     }
 
     [TestMethod]
@@ -473,7 +469,8 @@ public sealed class PragmaSuppressionTests
         Assert.AreEqual(
             $"#pragma warning disable WRANGLER0003 // {Title3}\n#pragma warning disable WRANGLER0002 // {Title2}\nclass C {{ }}",
             (await changed.GetTextAsync()).ToString());
-        Assert.IsFalse((await PragmaTestHelper.GetDiagnosticsAsync(changed)).Any(diagnostic => diagnostic.Id == "WRANGLER0005"));
+        Assert.DoesNotContain(
+            diagnostic => diagnostic.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(changed));
     }
 
     private sealed class UnreadableCatalog : AdditionalText
@@ -533,7 +530,7 @@ internal static class PragmaTestHelper
         Solution solution = workspace.CurrentSolution
             .AddProject(ProjectInfo.Create(
                 projectId, VersionStamp.Create(), "PragmaTests", "PragmaTests", LanguageNames.CSharp,
-                parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
+                parseOptions: new CSharpParseOptions(LanguageVersion.Latest),
                 compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
                 metadataReferences: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]))
             .AddDocument(documentId, fileName, SourceText.From(source), filePath: Path.Combine(directory, fileName))
@@ -565,7 +562,7 @@ internal static class PragmaTestHelper
         {
             ImmutableArray<Diagnostic> errors = compilation.GetDiagnostics()
                 .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToImmutableArray();
-            Assert.AreEqual(0, errors.Length, string.Join("\n", errors));
+            Assert.IsEmpty(errors, string.Join("\n", errors));
         }
 
         AnalyzerOptions options = additionalFiles.IsDefault
@@ -576,7 +573,7 @@ internal static class PragmaTestHelper
             reportSuppressedDiagnostics: includeSuppressed);
         ImmutableArray<Diagnostic> diagnostics = await compilation
             .WithAnalyzers([new PragmaSuppressionAnalyzer()], driverOptions).GetAnalyzerDiagnosticsAsync();
-        Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Id == "AD0001"), string.Join("\n", diagnostics));
+        Assert.DoesNotContain(diagnostic => diagnostic.Id == "AD0001", diagnostics, string.Join("\n", diagnostics));
         return diagnostics.OrderBy(diagnostic => diagnostic.Location.SourceSpan.Start)
             .ThenBy(diagnostic => diagnostic.Id, StringComparer.Ordinal).ToImmutableArray();
     }
@@ -592,7 +589,7 @@ internal static class PragmaTestHelper
     internal static async Task<Document> ApplyAsync(Document document, CodeAction action)
     {
         ImmutableArray<CodeActionOperation> operations = await action.GetOperationsAsync(CancellationToken.None);
-        ApplyChangesOperation change = operations.OfType<ApplyChangesOperation>().Single();
+        ApplyChangesOperation change = Assert.ContainsSingle(operations.OfType<ApplyChangesOperation>());
         return change.ChangedSolution.GetDocument(document.Id)
             ?? throw new InvalidOperationException("The code fix removed the document.");
     }
