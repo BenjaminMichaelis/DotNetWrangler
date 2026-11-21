@@ -91,8 +91,8 @@ dotnet test DotNetWrangler.slnx
 - [Language-agnostic analyzers with IOperation](https://www.meziantou.net/writing-a-language-agnostic-roslyn-analyzer-using-ioperation.htm)
 - [Working with types in a Roslyn analyzer](https://www.meziantou.net/working-with-types-in-a-roslyn-analyzer.htm)
 - [How to test a Roslyn analyzer](https://www.meziantou.net/how-to-test-a-roslyn-analyzer.htm)
-- [Microsoft: Write your first analyzer and code fix](https://learn.microsoft.com/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix)
+- [Microsoft: Write your first analyzer and code fix](https://learn.microsoft.com/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix?WT.mc_id=8B97120A00B57354)
 - [Roslyn: Analyzer actions semantics](https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Analyzer%20Actions%20Semantics.md)
 - [Roslyn analyzer release tracking](https://github.com/dotnet/roslyn-analyzers/blob/main/src/Microsoft.CodeAnalysis.Analyzers/ReleaseTrackingAnalyzers.Help.md)
-- [Microsoft: Configure code analysis rules](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/configuration-options)
+- [Microsoft: Configure code analysis rules](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/configuration-options?WT.mc_id=8B97120A00B57354)
 - [Roslyn Quoter](https://roslynquoter.azurewebsites.net/) and [SharpLab](https://sharplab.io/) for inspecting syntax trees and operations

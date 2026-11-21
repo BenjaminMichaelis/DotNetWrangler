@@ -26,7 +26,7 @@ This adds a package reference and restores it. To install a specific version, us
 
 To analyze all projects with one shared version, add the package in a file at the repository root instead of to each project. Use the latest version listed on [NuGet.org](https://www.nuget.org/packages/DotNetWrangler.Analyzers) in place of the version below.
 
-If the repository uses [Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management), add a [global package reference](https://learn.microsoft.com/nuget/consume-packages/central-package-management#global-package-references) to `Directory.Packages.props`:
+If the repository uses [Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management?WT.mc_id=8B97120A00B57354), add a [global package reference](https://learn.microsoft.com/nuget/consume-packages/central-package-management?WT.mc_id=8B97120A00B57354#global-package-references) to `Directory.Packages.props`:
 
 ```xml
 <ItemGroup>
