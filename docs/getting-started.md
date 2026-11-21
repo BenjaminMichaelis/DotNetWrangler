@@ -42,7 +42,9 @@ Otherwise, add a package reference to `Directory.Build.props`:
 </ItemGroup>
 ```
 
-`PrivateAssets="all"` keeps the analyzer from flowing to projects that reference yours; `dotnet add package` adds it for you, but a hand-written reference needs it explicitly. A global package reference applies it automatically.
+`PrivateAssets="all"` lets your projects use Wrangler without passing it to projects that depend on yours. If you publish your library as a NuGet package, Wrangler is not listed as a dependency, so installing your library doesn't also install Wrangler. This controls dependency propagation, not the package's visibility on NuGet.org.
+
+`dotnet add package` adds this setting for you, but a hand-written reference needs it explicitly. A global package reference applies it automatically.
 
 Test projects receive diagnostics too. That's intended: [WRANGLER0004](rules/WRANGLER0004.md) targets test code.
 
