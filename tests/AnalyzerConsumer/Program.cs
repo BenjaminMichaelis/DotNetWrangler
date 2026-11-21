@@ -1,8 +1,7 @@
 internal static class Program
 {
-    private static int GetValue()
+    private static string GetValue(string? value)
     {
-        int value = 42;
-        return value;
+        return value!;
     }
 }
