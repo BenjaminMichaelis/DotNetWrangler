@@ -15,9 +15,15 @@ _layout: landing
 
 Wrangler puts practical guardrails where you write code, without hiding missing data behind fabricated defaults.
 
+From your C# project folder, install the [NuGet prerelease](https://www.nuget.org/packages/DotNetWrangler.Analyzers):
+
+```shell
+dotnet add package DotNetWrangler.Analyzers --prerelease
+```
+
 <div class="hero-actions">
 
-[Get started](getting-started.md) [Explore the rules](../README.md#analyzer-catalog)
+[Installation guide](getting-started.md#install-the-package) [Explore the rules](../README.md#analyzer-catalog)
 
 </div>
 

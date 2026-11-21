@@ -4,15 +4,83 @@
 
 ## Install the package
 
-Wrangler is distributed as the [`DotNetWrangler.Analyzers`](https://www.nuget.org/packages/DotNetWrangler.Analyzers) NuGet package, which includes both the diagnostic analyzers and the IDE code fixes:
+Install [`DotNetWrangler.Analyzers`](https://www.nuget.org/packages/DotNetWrangler.Analyzers) in each C# project you want to analyze. The NuGet package includes both the analyzers and IDE code fixes, so you don't need to clone the repository. Only prerelease versions are currently published.
+
+### .NET CLI
+
+From the directory containing your project's `.csproj`, run:
 
 ```shell
-dotnet add package DotNetWrangler.Analyzers
+dotnet add package DotNetWrangler.Analyzers --prerelease
 ```
 
-For beta builds, add `--prerelease` or specify an exact prerelease version with `--version`.
+This adds a package reference and restores it. To install a specific version, use `--version` with an exact version from NuGet.org instead of `--prerelease`.
 
-The package is a development dependency, so it does not flow to projects that reference yours. Build with a .NET SDK whose compiler supports the analyzer's Roslyn dependency; the current version is recorded in [Wrangler.Analyzers.csproj](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/src/Wrangler.Analyzers/Wrangler.Analyzers.csproj). A `netstandard2.0` target alone does not guarantee compatibility with an older compiler host.
+### Visual Studio
+
+1. Select your C# project in **Solution Explorer**, then choose **Project > Manage NuGet Packages**.
+2. On the **Browse** tab, select **nuget.org** as the package source, check **Include prerelease**, and search for `DotNetWrangler.Analyzers`.
+3. Select the package and choose **Install**.
+
+### Every project in a repository
+
+To analyze all projects with one shared version, add the package in a file at the repository root instead of to each project. Use the latest version listed on [NuGet.org](https://www.nuget.org/packages/DotNetWrangler.Analyzers) in place of the version below.
+
+If the repository uses [Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management?WT.mc_id=8B97120A00B57354), add a [global package reference](https://learn.microsoft.com/nuget/consume-packages/central-package-management?WT.mc_id=8B97120A00B57354#global-package-references) to `Directory.Packages.props`:
+
+```xml
+<ItemGroup>
+  <GlobalPackageReference Include="DotNetWrangler.Analyzers" Version="0.1.0-beta.1" />
+</ItemGroup>
+```
+
+Otherwise, add a package reference to `Directory.Build.props`:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="DotNetWrangler.Analyzers" Version="0.1.0-beta.1" PrivateAssets="all" />
+</ItemGroup>
+```
+
+`PrivateAssets="all"` lets your projects use Wrangler without passing it to projects that depend on yours. If you publish your library as a NuGet package, Wrangler is not listed as a dependency, so installing your library doesn't also install Wrangler. This controls dependency propagation, not the package's visibility on NuGet.org.
+
+`dotnet add package` adds this setting for you, but a hand-written reference needs it explicitly. A global package reference applies it automatically.
+
+Test projects receive diagnostics too. That's intended: [WRANGLER0004](rules/WRANGLER0004.md) targets test code.
+
+### Compiler compatibility
+
+Wrangler runs in your SDK's or IDE's Roslyn compiler. If you see `CS9057`, the compiler is too old for the installed package. Select a newer [.NET SDK](https://dotnet.microsoft.com/download) for builds or update your IDE for live analysis. You don't need to change your project's target framework.
+
+## Try a diagnostic
+
+Add this method inside a class in the project where you installed Wrangler:
+
+```csharp
+static int GetRetryLimit()
+{
+    int retryLimit = 3;
+    return retryLimit;
+}
+```
+
+Run `dotnet build`. [WRANGLER0001](rules/WRANGLER0001.md) reports that `retryLimit` can be made constant:
+
+```csharp
+static int GetRetryLimit()
+{
+    const int retryLimit = 3;
+    return retryLimit;
+}
+```
+
+WRANGLER0001 through WRANGLER0004 are warnings by default. The two pragma policies are disabled until you [enable them explicitly](configuration.md#enable-the-optional-pragma-policies).
+
+## Choose your policy
+
+Use [configuration](configuration.md) to set each rule's severity independently. For a deliberate exception, use a [scoped suppression with a reason](suppressions.md) rather than disabling the rule everywhere.
+
+Null-forgiving diagnostics intentionally include some valid uses of `!`, including null-input argument-validation tests. The [rule selection table](rules/WRANGLER0002.md#which-null-forgiving-rule-applies) explains which diagnostic to expect.
 
 ## Use the analyzers from source
 
@@ -31,35 +99,5 @@ Clone this repository into a folder named `DotNetWrangler` alongside the project
 Adjust `Include` relative to the consuming `.csproj` and your local checkout's folder name. The same compiler requirement applies.
 
 This reference loads the diagnostic analyzers, not the IDE code-fix providers. Use the package to get code fixes in your editor.
-
-## Try a diagnostic
-
-In the consuming project, add a method with an unmodified constant-valued local:
-
-```csharp
-static int GetRetryLimit()
-{
-    int retryLimit = 3;
-    return retryLimit;
-}
-```
-
-Build the project. [WRANGLER0001](rules/WRANGLER0001.md) reports that `retryLimit` can be made constant:
-
-```csharp
-static int GetRetryLimit()
-{
-    const int retryLimit = 3;
-    return retryLimit;
-}
-```
-
-WRANGLER0001 through WRANGLER0004 are warnings by default. The two pragma policies are disabled until you [enable them explicitly](configuration.md#enable-the-optional-pragma-policies).
-
-## Choose your policy
-
-Use [configuration](configuration.md) to set each rule's severity independently. For a deliberate exception, use a [scoped suppression with a reason](suppressions.md) rather than disabling the rule everywhere.
-
-Null-forgiving diagnostics intentionally include some valid uses of `!`, including null-input argument-validation tests. The [rule selection table](rules/WRANGLER0002.md#which-null-forgiving-rule-applies) explains which diagnostic to expect.
 
 For repository development, see [projects and build instructions](../README.md#projects).

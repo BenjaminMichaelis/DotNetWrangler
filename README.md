@@ -8,7 +8,15 @@ Read the [documentation site](https://benjaminmichaelis.github.io/DotNetWrangler
 
 ## Start here
 
-- [Getting started](docs/getting-started.md): install the `DotNetWrangler.Analyzers` NuGet package or use the analyzers from source.
+From the folder containing your C# project's `.csproj`, install the [`DotNetWrangler.Analyzers`](https://www.nuget.org/packages/DotNetWrangler.Analyzers) NuGet prerelease:
+
+```shell
+dotnet add package DotNetWrangler.Analyzers --prerelease
+```
+
+Run `dotnet build` to see any Wrangler diagnostics. No source checkout is needed.
+
+- [Getting started](docs/getting-started.md): install in Visual Studio, check compiler compatibility, and try a diagnostic.
 - [Configuration](docs/configuration.md): choose severities and enable the optional pragma policies.
 - [Suppressing a diagnostic](docs/suppressions.md): document intentional exceptions without disabling a rule project-wide.
 - [Analyzer catalog](#analyzer-catalog): find a rule's explanation, examples, and code-fix availability.
@@ -64,7 +72,7 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 - [Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) has an opt-in rule for `null!` / `default!`.
 - The .NET SDK's IDE analyzers report `!` that the compiler doesn't need and offer to remove it.
 - StyleCop [SA1404](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1404.md) requires justifications on `SuppressMessage` attributes, not pragma title/reason comments. The related pragma proposal [DotNetAnalyzers/StyleCopAnalyzers#3403](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/3403) motivated similar discussion.
-- The SDK's [IDE0079](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0079) finds unnecessary suppressions; WRANGLER0005/WRANGLER0006 document the suppressions that remain.
+- The SDK's [IDE0079](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0079?WT.mc_id=8B97120A00B57354) finds unnecessary suppressions; WRANGLER0005/WRANGLER0006 document the suppressions that remain.
 
 ## Projects
 
@@ -81,7 +89,7 @@ dotnet test DotNetWrangler.slnx
 
 ## Release
 
-The [publish workflow](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/.github/workflows/publish.yml) tests the solution, packs it, and publishes to nuget.org through [trusted publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing).
+The [publish workflow](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/.github/workflows/publish.yml) tests the solution, packs it, and publishes to nuget.org through [trusted publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing?WT.mc_id=8B97120A00B57354).
 
 - Pushing a `vMAJOR.MINOR.PATCH[-prerelease]` tag publishes exactly that version. Only tags without a suffix publish stable versions.
 - The nightly run at 10:05 UTC publishes from `main` only if that commit has not already published. It takes the highest tagged version, increments its patch if it is stable, and appends `-beta.<run number>`. After the first tagged beta, use a different suffix (for example, `-rc.1`) for manual prereleases to avoid colliding with nightly versions.
