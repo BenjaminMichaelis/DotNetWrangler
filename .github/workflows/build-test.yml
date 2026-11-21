@@ -114,10 +114,9 @@ jobs:
           cat > "$consumer/Consumer.cs" <<'EOF'
           public static class Consumer
           {
-              public static int GetValue()
+              public static string GetValue(string? value)
               {
-                  int value = 42;
-                  return value;
+                  return value!;
               }
           }
           EOF
