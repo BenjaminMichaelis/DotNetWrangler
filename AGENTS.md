@@ -8,9 +8,10 @@ Path | Responsibility
 -----|---------------
 `src\Wrangler.Analyzers` | Diagnostic analyzers; targets .NET Standard 2.0.
 `src\Wrangler.CodeFixes` | Code fix providers and Workspace-dependent code; targets .NET Standard 2.0.
+`src\Wrangler.Package` | Pack-only project producing the `DotNetWrangler.Analyzers` NuGet package; trusted publishing runs on version tags and nightly for new commits on `main`.
 `tests\Wrangler.Tests` | MSTest tests, using VSTest and Roslyn compilations/workspaces; targets .NET 8.
 
-Add rules to these existing projects, not a separate project per rule. Keep compiler-only analyzer code independent of Workspaces and test-framework runtime dependencies. Read the project files and `Directory.Build.props` for current dependency versions and language settings.
+Add rules to these existing projects, not a separate project per rule. Keep compiler-only analyzer code independent of Workspaces and test-framework runtime dependencies. Read the project files, `Directory.Build.props`, `Directory.Packages.props`, and `global.json` for current dependency versions, language settings, and SDK pin.
 
 ## Adding or changing a rule
 

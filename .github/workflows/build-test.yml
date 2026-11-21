@@ -43,7 +43,7 @@ jobs:
           # The test project targets net8.0, so its runtime is required alongside the build SDK.
           dotnet-version: |
             8.0.x
-            11.0.x
+            11.0.100
       - name: Lint GitHub Actions workflows
         if: matrix.os == 'ubuntu-latest'
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.11 .github/workflows/*.yml
@@ -79,3 +79,57 @@ jobs:
           trx-file-path: TestResults/*.trx
           test-outcomes: Failed
           artifact-name: failed-tests-playlist-${{ matrix.os }}
+      - name: Pack and smoke-test analyzer package
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          PACKAGE_VERSION: 0.0.0-ci.${{ github.run_number }}
+          REPOSITORY_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          dotnet pack src/Wrangler.Package/Wrangler.Package.csproj \
+            --configuration Release \
+            --output artifacts \
+            "-p:Version=$PACKAGE_VERSION" \
+            "-p:RepositoryCommit=$REPOSITORY_COMMIT"
+
+          consumer="$RUNNER_TEMP/wrangler-package-consumer"
+          mkdir -p "$consumer"
+          cat > "$consumer/Consumer.csproj" <<EOF
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>net8.0</TargetFramework>
+              <RestoreAdditionalProjectSources>$GITHUB_WORKSPACE/artifacts</RestoreAdditionalProjectSources>
+              <RestorePackagesPath>$RUNNER_TEMP/wrangler-package-consumer/packages</RestorePackagesPath>
+            </PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="DotNetWrangler.Analyzers" Version="$PACKAGE_VERSION" />
+            </ItemGroup>
+          </Project>
+          EOF
+          cat > "$consumer/.editorconfig" <<'EOF'
+          root = true
+          [*.cs]
+          dotnet_diagnostic.WRANGLER0001.severity = error
+          EOF
+          cat > "$consumer/Consumer.cs" <<'EOF'
+          public static class Consumer
+          {
+              public static int GetValue()
+              {
+                  int value = 42;
+                  return value;
+              }
+          }
+          EOF
+          build_log="$RUNNER_TEMP/wrangler-package-consumer.log"
+          if dotnet build "$consumer/Consumer.csproj" --configuration Release >"$build_log" 2>&1; then
+            cat "$build_log"
+            echo "::error::The package failed to report WRANGLER0001 to a consumer project."
+            exit 1
+          fi
+          if ! grep -Fq 'error WRANGLER0001:' "$build_log"; then
+            cat "$build_log"
+            echo "::error::The consumer build failed without reporting WRANGLER0001."
+            exit 1
+          fi
+          echo "The packaged analyzer reports WRANGLER0001 to a consuming project."

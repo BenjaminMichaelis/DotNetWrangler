@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Wrangler.Package/Wrangler.Package.csproj" />
+  </Folder>
   <Project Path="src/Wrangler.Analyzers/Wrangler.Analyzers.csproj" />
   <Project Path="src/Wrangler.CodeFixes/Wrangler.CodeFixes.csproj" />
   <Project Path="tests/Wrangler.Tests/Wrangler.Tests.csproj" />

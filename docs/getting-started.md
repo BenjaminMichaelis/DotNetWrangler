@@ -2,11 +2,21 @@
 
 [Analyzer catalog](../README.md#analyzer-catalog) | [Configuration](configuration.md) | [Suppressions](suppressions.md)
 
-## Current distribution
+## Install the package
 
-Wrangler currently lives in this source repository. The analyzer and code-fix projects both have `IsPackable` set to `false`; this repository does not yet configure a distributable NuGet package or an IDE extension. The instructions below use a source project reference, not a package installation.
+Wrangler is distributed as the [`DotNetWrangler.Analyzers`](https://www.nuget.org/packages/DotNetWrangler.Analyzers) NuGet package, which includes both the diagnostic analyzers and the IDE code fixes:
+
+```shell
+dotnet add package DotNetWrangler.Analyzers
+```
+
+For beta builds, add `--prerelease` or specify an exact prerelease version with `--version`.
+
+The package is a development dependency, so it does not flow to projects that reference yours. Build with a .NET SDK whose compiler supports the analyzer's Roslyn dependency; the current version is recorded in [Wrangler.Analyzers.csproj](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/src/Wrangler.Analyzers/Wrangler.Analyzers.csproj). A `netstandard2.0` target alone does not guarantee compatibility with an older compiler host.
 
 ## Use the analyzers from source
+
+To try unreleased changes, reference the source instead of the package.
 
 Clone this repository into a folder named `DotNetWrangler` alongside the project you want to analyze. In the consuming `.csproj`, add a reference to the analyzer project:
 
@@ -18,9 +28,9 @@ Clone this repository into a folder named `DotNetWrangler` alongside the project
 </ItemGroup>
 ```
 
-Adjust `Include` relative to the consuming `.csproj` and your local checkout's folder name. Build that project with a .NET SDK whose compiler supports the analyzer's Roslyn dependency; the current version is recorded in [Wrangler.Analyzers.csproj](https://github.com/BenjaminMichaelis/DotNetWrangler/blob/main/src/Wrangler.Analyzers/Wrangler.Analyzers.csproj). A `netstandard2.0` target alone does not guarantee compatibility with an older compiler host.
+Adjust `Include` relative to the consuming `.csproj` and your local checkout's folder name. The same compiler requirement applies.
 
-This reference loads the diagnostic analyzers, not the IDE code-fix providers. Code fixes are implemented in `Wrangler.CodeFixes`, but this reference does not install them into your editor.
+This reference loads the diagnostic analyzers, not the IDE code-fix providers. Use the package to get code fixes in your editor.
 
 ## Try a diagnostic
 

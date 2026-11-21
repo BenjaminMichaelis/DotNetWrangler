@@ -8,6 +8,10 @@ updates:
       nuget-dependencies:
         patterns:
           - "*"
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: weekly
   - package-ecosystem: github-actions
     directory: /
     schedule:
