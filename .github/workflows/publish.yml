@@ -90,7 +90,7 @@ jobs:
             11.0.100
       - name: Test
         if: steps.version.outputs.version != ''
-        run: dotnet test DotNetWrangler.slnx -c Release
+        run: dotnet test DotNetWrangler.slnx -c Release -warnaserror
       - name: Pack
         if: steps.version.outputs.version != ''
         env:
@@ -98,7 +98,7 @@ jobs:
           RELEASE_NOTES: ${{ steps.version.outputs.release_notes }}
         run: >-
           dotnet pack src/Wrangler.Package/Wrangler.Package.csproj
-          -c Release -o artifacts
+          -c Release -o artifacts -warnaserror
           "-p:Version=$VERSION"
           "-p:PackageReleaseNotes=$RELEASE_NOTES"
           "-p:RepositoryCommit=$GITHUB_SHA"

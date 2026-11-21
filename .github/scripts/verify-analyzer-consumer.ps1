@@ -1,5 +1,5 @@
 $project = Join-Path $PSScriptRoot "..\..\tests\AnalyzerConsumer\AnalyzerConsumer.csproj"
-$output = & dotnet build $project --configuration Release --verbosity minimal "-warnaserror:WRANGLER0001" 2>&1
+$output = & dotnet build $project --configuration Release --verbosity minimal -warnaserror 2>&1
 $exitCode = $LASTEXITCODE
 $log = $output -join [Environment]::NewLine
 $log | Write-Output

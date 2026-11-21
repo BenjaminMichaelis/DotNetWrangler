@@ -79,8 +79,10 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 ## Build and test
 
 ```shell
-dotnet test DotNetWrangler.slnx
+dotnet test DotNetWrangler.slnx -warnaserror
 ```
+
+CI treats compiler, enabled analyzer, and MSBuild warnings as errors during restore, build, test, and pack. The repository enables RS1015 to require diagnostic help links; warnings-as-errors does not enable other disabled rules.
 
 ## Release
 
