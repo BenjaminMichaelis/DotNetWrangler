@@ -20,11 +20,10 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), "'Name'");
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), "'Name'");
     }
 
     [TestMethod]
@@ -41,10 +40,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.FabricatedNonNullValueDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.FabricatedNonNullValueDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -61,10 +59,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -82,10 +79,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(expectedId, diagnostics[0].Id);
+        Assert.AreEqual(expectedId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -105,10 +101,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, framework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     private const string MSTestFramework = """
@@ -211,11 +206,10 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, framework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), $"'{expectedAssertion}'");
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), $"'{expectedAssertion}'");
     }
 
     [TestMethod]
@@ -241,10 +235,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, framework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -261,10 +254,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, framework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -285,11 +277,10 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, XunitFramework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), "'Assert.NotNull(Name)'");
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), "'Assert.NotNull(Name)'");
     }
 
     [TestMethod]
@@ -309,11 +300,10 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework + NUnitFramework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, XunitFramework + NUnitFramework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), "'Assert.That(Name, Is.Not.Null)'");
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), "'Assert.That(Name, Is.Not.Null)'");
     }
 
     [TestMethod]
@@ -336,10 +326,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, XunitFramework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -366,10 +355,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -397,10 +385,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, framework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.FabricatedNonNullValueDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.FabricatedNonNullValueDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -426,13 +413,12 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, framework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, framework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(expectedId, diagnostics[0].Id);
+        Assert.AreEqual(expectedId, diagnostic.Id);
         if (expectedAssertion.Length > 0)
         {
-            StringAssert.Contains(diagnostics[0].GetMessage(), $"'{expectedAssertion}'");
+            StringAssert.Contains(diagnostic.GetMessage(), $"'{expectedAssertion}'");
         }
     }
 
@@ -464,10 +450,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework, allowUnsafe);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, TUnitFramework, allowUnsafe));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -495,11 +480,10 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, TUnitFramework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
-        StringAssert.Contains(diagnostics[0].GetMessage(), "'await Assert.That(name).IsNotNull()'");
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostic.Id);
+        StringAssert.Contains(diagnostic.GetMessage(), "'await Assert.That(name).IsNotNull()'");
     }
 
     [TestMethod]
@@ -528,10 +512,9 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, TUnitFramework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.UseAssertionInTestsDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -555,10 +538,9 @@ public sealed class NullForgivingOperatorTests
             {{closingBraces}}
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, TUnitFramework, allowUnsafe: true);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, TUnitFramework, allowUnsafe: true));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostics[0].Id);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.NullForgivingOperatorDiagnosticId, diagnostic.Id);
     }
 
     [TestMethod]
@@ -586,11 +568,10 @@ public sealed class NullForgivingOperatorTests
             }
             """;
 
-        ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source, XunitFramework);
+        Diagnostic diagnostic = Assert.ContainsSingle(await GetAnalyzerDiagnosticsAsync(source, XunitFramework));
 
-        Assert.AreEqual(1, diagnostics.Length);
-        Assert.AreEqual(NullForgivingOperatorAnalyzer.FabricatedNonNullValueDiagnosticId, diagnostics[0].Id);
-        Assert.AreEqual(source.LastIndexOf("null!", StringComparison.Ordinal), diagnostics[0].Location.SourceSpan.Start);
+        Assert.AreEqual(NullForgivingOperatorAnalyzer.FabricatedNonNullValueDiagnosticId, diagnostic.Id);
+        Assert.AreEqual(source.LastIndexOf("null!", StringComparison.Ordinal), diagnostic.Location.SourceSpan.Start);
     }
 
     [TestMethod]
@@ -606,7 +587,7 @@ public sealed class NullForgivingOperatorTests
 
         ImmutableArray<Diagnostic> diagnostics = await GetAnalyzerDiagnosticsAsync(source);
 
-        Assert.AreEqual(0, diagnostics.Length);
+        Assert.IsEmpty(diagnostics);
     }
 
     private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(
@@ -656,6 +637,6 @@ public sealed class NullForgivingOperatorTests
         Diagnostic[] errors = compilation.GetDiagnostics()
             .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
-        Assert.AreEqual(0, errors.Length, string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString())));
+        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString())));
     }
 }

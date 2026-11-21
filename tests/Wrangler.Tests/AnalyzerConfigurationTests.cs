@@ -102,7 +102,7 @@ public sealed class AnalyzerConfigurationTests
             ?? throw new InvalidOperationException("Could not create the test project.");
         Compilation compilation = await project.GetCompilationAsync()
             ?? throw new InvalidOperationException("Could not create the test compilation.");
-        Assert.IsFalse(compilation.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        Assert.DoesNotContain(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error, compilation.GetDiagnostics());
 
         ImmutableArray<Diagnostic> diagnostics = await compilation
             .WithAnalyzers(
@@ -113,10 +113,10 @@ public sealed class AnalyzerConfigurationTests
         string[] expectedIds = ruleIds
             .Where(id => id != ruleId || severity != "none")
             .ToArray();
-        Assert.AreEqual(expectedIds.Length, diagnostics.Length);
+        Assert.HasCount(expectedIds.Length, diagnostics);
         foreach (string expectedId in expectedIds)
         {
-            Diagnostic diagnostic = Assert.ContainsSingle(diagnostics.Where(item => item.Id == expectedId));
+            Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == expectedId, diagnostics);
             DiagnosticSeverity expectedSeverity = expectedId == ruleId && severity == "error"
                 ? DiagnosticSeverity.Error
                 : DiagnosticSeverity.Warning;
@@ -134,7 +134,7 @@ public sealed class AnalyzerConfigurationTests
             var expectedSpan = new TextSpan(source.IndexOf(construct, StringComparison.Ordinal), construct.Length);
             Assert.IsTrue(diagnostic.Location.SourceSpan.Length > 0);
             Assert.IsTrue(expectedSpan.Contains(diagnostic.Location.SourceSpan));
-            Assert.AreEqual(compilation.SyntaxTrees.Single(), diagnostic.Location.SourceTree);
+            Assert.AreEqual(Assert.ContainsSingle(compilation.SyntaxTrees), diagnostic.Location.SourceTree);
             if (expectedId == "WRANGLER0001")
             {
                 StringAssert.Contains(diagnostic.GetMessage(), "answer");
@@ -169,11 +169,12 @@ public sealed class AnalyzerConfigurationTests
             "#pragma warning disable CONTOSO001", out Document document, editorConfig,
             catalog: configuration == "invalid-catalog" ? "Invalid catalog" : null);
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Assert.AreEqual(titleSeverity == "none" ? 0 : 1, diagnostics.Count(diagnostic => diagnostic.Id == "WRANGLER0005"));
-        Assert.AreEqual(reasonSeverity == "none" ? 0 : 1, diagnostics.Count(diagnostic => diagnostic.Id == "WRANGLER0006"));
+        Assert.HasCount(titleSeverity == "none" ? 0 : 1, diagnostics.Where(diagnostic => diagnostic.Id == "WRANGLER0005"));
+        Assert.HasCount(reasonSeverity == "none" ? 0 : 1, diagnostics.Where(diagnostic => diagnostic.Id == "WRANGLER0006"));
         if (titleSeverity != "none" && configuration != "valid")
         {
-            StringAssert.Contains(diagnostics.Single(diagnostic => diagnostic.Id == "WRANGLER0005").GetMessage(), "Invalid");
+            Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == "WRANGLER0005", diagnostics);
+            StringAssert.Contains(diagnostic.GetMessage(), "Invalid");
         }
     }
 
@@ -194,7 +195,7 @@ public sealed class AnalyzerConfigurationTests
             "#pragma warning disable CONTOSO001 // A custom title; Justification: Intentional.",
             out Document document, editorConfig, fileName: fileName);
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Assert.AreEqual(expectedCount, diagnostics.Length);
+        Assert.HasCount(expectedCount, diagnostics);
         if (expectedCount > 0)
         {
             Assert.AreEqual("WRANGLER0005", diagnostics[0].Id);
