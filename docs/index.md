@@ -39,7 +39,7 @@ dotnet add package DotNetWrangler.Analyzers --prerelease
 public string Name { get; init; } = null!;
 ```
 
-<p class="preview-diagnostic"><strong>WRANGLER0003</strong> Null-forgiving operator fabricates a non-null value</p>
+<p class="preview-diagnostic"><strong>WRANGLER0002</strong> Null-forgiving operator fabricates a non-null value</p>
 <p class="preview-label">Express the contract</p>
 
 ```csharp

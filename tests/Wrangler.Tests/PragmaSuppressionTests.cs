@@ -21,11 +21,11 @@ public sealed class PragmaSuppressionTests
     private const string Reason = "; Justification: Tests null rejection.";
 
     [TestMethod]
-    [DataRow("// Justification: Tests null rejection.\n#pragma warning disable WRANGLER0003 // " + Title3)]
-    [DataRow("#pragma warning disable WRANGLER0003 // " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0003 // WRANGLER0003: " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0003 // " + Title3 + "; justification \t: Tests null rejection; not defaults #1.")]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0003: " + Title3 + "; WRANGLER0002: " + Title2 + Reason)]
+    [DataRow("// Justification: Tests null rejection.\n#pragma warning disable WRANGLER0002 // " + Title3)]
+    [DataRow("#pragma warning disable WRANGLER0002 // " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0002 // WRANGLER0002: " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0002 // " + Title3 + "; justification \t: Tests null rejection; not defaults #1.")]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0002: " + Title3 + "; WRANGLER0001: " + Title2 + Reason)]
     [DataRow("#pragma warning disable CONTOSO001 // Custom rule title" + Reason)]
     [DataRow("#pragma warning disable 0168 // Unused local variable" + Reason)]
     [DataRow("#pragma warning disable 0168, 168, CS0168 // Unused local variable" + Reason)]
@@ -36,18 +36,18 @@ public sealed class PragmaSuppressionTests
     }
 
     [TestMethod]
-    [DataRow("#pragma warning disable WRANGLER0003", "WRANGLER0005,WRANGLER0006")]
-    [DataRow("#pragma warning disable", "WRANGLER0005,WRANGLER0006")]
-    [DataRow("#pragma warning disable // Justification: Intentional.", "WRANGLER0005")]
-    [DataRow("#pragma warning disable WRANGLER0003 // " + Title3, "WRANGLER0006")]
-    [DataRow("#pragma warning disable WRANGLER0003 // Justification: Tests null rejection.", "WRANGLER0005")]
-    [DataRow("#pragma warning disable WRANGLER0003 // Wrong title" + Reason, "WRANGLER0005")]
-    [DataRow("#pragma warning disable WRANGLER0003 // " + Title3 + "; Justification:   ", "WRANGLER0006")]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002: " + Title2 + Reason, "WRANGLER0005")]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // Bare title" + Reason, "WRANGLER0005")]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002: " + Title2 + "; WRANGLER0002: " + Title2 + Reason, "WRANGLER0005")]
-    [DataRow("#pragma warning disable WRANGLER0003 // " + Title3 + " - Justification: Tests null rejection.", "WRANGLER0005,WRANGLER0006")]
-    [DataRow("#pragma warning disable WRANGLER0003 // " + Title3 + "." + Reason, "WRANGLER0005")]
+    [DataRow("#pragma warning disable WRANGLER0002", "WRANGLER0004,WRANGLER0005")]
+    [DataRow("#pragma warning disable", "WRANGLER0004,WRANGLER0005")]
+    [DataRow("#pragma warning disable // Justification: Intentional.", "WRANGLER0004")]
+    [DataRow("#pragma warning disable WRANGLER0002 // " + Title3, "WRANGLER0005")]
+    [DataRow("#pragma warning disable WRANGLER0002 // Justification: Tests null rejection.", "WRANGLER0004")]
+    [DataRow("#pragma warning disable WRANGLER0002 // Wrong title" + Reason, "WRANGLER0004")]
+    [DataRow("#pragma warning disable WRANGLER0002 // " + Title3 + "; Justification:   ", "WRANGLER0005")]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: " + Title2 + Reason, "WRANGLER0004")]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // Bare title" + Reason, "WRANGLER0004")]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: " + Title2 + "; WRANGLER0001: " + Title2 + Reason, "WRANGLER0004")]
+    [DataRow("#pragma warning disable WRANGLER0002 // " + Title3 + " - Justification: Tests null rejection.", "WRANGLER0004,WRANGLER0005")]
+    [DataRow("#pragma warning disable WRANGLER0002 // " + Title3 + "." + Reason, "WRANGLER0004")]
     public async Task MissingMetadata_ReportsIndependentRulesAtDisableKeyword(string source, string expectedIds)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
@@ -74,10 +74,10 @@ public sealed class PragmaSuppressionTests
     public async Task PrecedingJustification_RequiresAnImmediatelyAdjacentStandaloneLine(string prefix, bool accepted)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
-            prefix + "#pragma warning disable WRANGLER0003 // " + Title3, out Document document);
+            prefix + "#pragma warning disable WRANGLER0002 // " + Title3, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document);
         CollectionAssert.AreEqual(
-            accepted ? Array.Empty<string>() : ["WRANGLER0006"],
+            accepted ? Array.Empty<string>() : ["WRANGLER0005"],
             diagnostics.Select(diagnostic => diagnostic.Id).ToArray());
     }
 
@@ -85,19 +85,19 @@ public sealed class PragmaSuppressionTests
     public async Task PrecedingJustification_DoesNotCarryAcrossStackedDirectives()
     {
         string source = "// Justification: First directive only.\n"
-            + "#pragma warning disable WRANGLER0003 // " + Title3 + "\n"
-            + "#pragma warning disable WRANGLER0002 // " + Title2;
+            + "#pragma warning disable WRANGLER0002 // " + Title3 + "\n"
+            + "#pragma warning disable WRANGLER0001 // " + Title2;
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
-        Assert.AreEqual("WRANGLER0006", diagnostic.Id);
+        Assert.AreEqual("WRANGLER0005", diagnostic.Id);
         Assert.AreEqual(2, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
     }
 
     [TestMethod]
-    [DataRow("#if false\n#pragma warning disable WRANGLER0003\n#endif", "Test.cs")]
-    [DataRow("#pragma warning restore WRANGLER0003", "Test.cs")]
-    [DataRow("#pragma warning disable WRANGLER0003", "Test.g.cs")]
-    [DataRow("// <auto-generated/>\n#pragma warning disable WRANGLER0003", "Test.cs")]
+    [DataRow("#if false\n#pragma warning disable WRANGLER0002\n#endif", "Test.cs")]
+    [DataRow("#pragma warning restore WRANGLER0002", "Test.cs")]
+    [DataRow("#pragma warning disable WRANGLER0002", "Test.g.cs")]
+    [DataRow("// <auto-generated/>\n#pragma warning disable WRANGLER0002", "Test.cs")]
     public async Task InactiveGeneratedAndRestoreDirectives_AreIgnored(string source, string fileName)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document, fileName: fileName);
@@ -105,11 +105,11 @@ public sealed class PragmaSuppressionTests
     }
 
     [TestMethod]
-    [DataRow("#pragma warning disable WRANGLER0003,")]
-    [DataRow("#pragma warning enable WRANGLER0003")]
-    [DataRow("#pragma warning disable WRANGLER0003 +")]
-    [DataRow("#pragma warning disable \"WRANGLER0003\"")]
-    [DataRow("#pragma warning disable WRANGLER0003 /* note */")]
+    [DataRow("#pragma warning disable WRANGLER0002,")]
+    [DataRow("#pragma warning enable WRANGLER0002")]
+    [DataRow("#pragma warning disable WRANGLER0002 +")]
+    [DataRow("#pragma warning disable \"WRANGLER0002\"")]
+    [DataRow("#pragma warning disable WRANGLER0002 /* note */")]
     public async Task IncompleteDirectives_DoNotThrowOrReportMetadata(string source)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
@@ -120,7 +120,7 @@ public sealed class PragmaSuppressionTests
     public async Task DefaultSettings_LeaveBothRulesDisabled()
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
-            "#pragma warning disable WRANGLER0003", out Document document, editorConfig: "root = true\n[*.cs]");
+            "#pragma warning disable WRANGLER0002", out Document document, editorConfig: "root = true\n[*.cs]");
         Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
@@ -148,7 +148,7 @@ public sealed class PragmaSuppressionTests
             catalog: "CONTOSO001 = Prefer C# interfaces",
             editorConfig: PragmaTestHelper.EnabledConfig + $"\nwrangler_pragma_title_validation = {mode}");
         Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
-        Assert.AreEqual("WRANGLER0005", diagnostic.Id);
+        Assert.AreEqual("WRANGLER0004", diagnostic.Id);
         StringAssert.Contains(diagnostic.GetMessage(), "Prefer C# interfaces");
     }
 
@@ -156,7 +156,7 @@ public sealed class PragmaSuppressionTests
     [DataRow("not an entry", "Expected 'ID = Title'")]
     [DataRow("CONTOSO001 = ", "empty")]
     [DataRow("0168 = Unused local", "CS0168")]
-    [DataRow("WRANGLER0003 = Not authoritative", "reserved")]
+    [DataRow("WRANGLER0002 = Not authoritative", "reserved")]
     [DataRow("WRANGLER0099 = Future Wrangler rule", "reserved")]
     [DataRow("CONTOSO001 = First\nCONTOSO001 = Second", "Duplicate")]
     [DataRow("CONTOSO001 = Justification: Not a title", "reserved")]
@@ -166,7 +166,7 @@ public sealed class PragmaSuppressionTests
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
             "#pragma warning disable CONTOSO001 // A title" + Reason, out Document document, catalog: catalog);
         Diagnostic diagnostic = Assert.ContainsSingle(await PragmaTestHelper.GetDiagnosticsAsync(document));
-        Assert.AreEqual("WRANGLER0005", diagnostic.Id);
+        Assert.AreEqual("WRANGLER0004", diagnostic.Id);
         StringAssert.Contains(diagnostic.GetMessage(), message);
         Assert.AreEqual("disable", (await document.GetTextAsync()).ToString(diagnostic.Location.SourceSpan));
     }
@@ -238,7 +238,7 @@ public sealed class PragmaSuppressionTests
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(
             document.WithText(SourceText.From(incorrectTitles)));
         Assert.HasCount(descriptors.Length, diagnostics);
-        Assert.DoesNotContain(diagnostic => diagnostic.Id != "WRANGLER0005", diagnostics);
+        Assert.DoesNotContain(diagnostic => diagnostic.Id != "WRANGLER0004", diagnostics);
         for (int index = 0; index < descriptors.Length; index++)
         {
             StringAssert.Contains(diagnostics[index].GetMessage(), $"'{descriptors[index].Id}'");
@@ -246,15 +246,15 @@ public sealed class PragmaSuppressionTests
     }
 
     [TestMethod]
-    [DataRow("WRANGLER0005", "Document suppressed diagnostic IDs and titles")]
-    [DataRow("WRANGLER0006", "Justify warning suppressions")]
+    [DataRow("WRANGLER0004", "Document suppressed diagnostic IDs and titles")]
+    [DataRow("WRANGLER0005", "Justify warning suppressions")]
     public async Task PolicyRules_HonorScopedSuppressionAndRestoration(string id, string title)
     {
-        string violation = id == "WRANGLER0005" ? "Wrong title" + Reason : Title3;
+        string violation = id == "WRANGLER0004" ? "Wrong title" + Reason : Title3;
         string source = $"#pragma warning disable {id} // {title}{Reason}\n"
-            + $"#pragma warning disable WRANGLER0003 // {violation}\n"
+            + $"#pragma warning disable WRANGLER0002 // {violation}\n"
             + $"#pragma warning restore {id}\n"
-            + $"#pragma warning disable WRANGLER0003 // {violation}";
+            + $"#pragma warning disable WRANGLER0002 // {violation}";
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = await PragmaTestHelper.GetDiagnosticsAsync(document, includeSuppressed: true);
         Assert.HasCount(2, diagnostics);
@@ -272,7 +272,7 @@ public sealed class PragmaSuppressionTests
             ?? throw new InvalidOperationException("No syntax root.");
         SyntaxTrivia directive = SyntaxFactory.Trivia(SyntaxFactory.PragmaWarningDirectiveTrivia(
             SyntaxFactory.Token(SyntaxKind.DisableKeyword),
-            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(SyntaxFactory.IdentifierName("WRANGLER0003")),
+            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(SyntaxFactory.IdentifierName("WRANGLER0002")),
             isActive: true));
         SyntaxToken token = root.GetFirstToken();
         root = root.ReplaceToken(token, token.WithLeadingTrivia(
@@ -282,7 +282,7 @@ public sealed class PragmaSuppressionTests
             SyntaxFactory.Comment(" // " + Title3),
             SyntaxFactory.CarriageReturnLineFeed));
         document = document.WithSyntaxRoot(Formatter.Format(root, workspace));
-        StringAssert.Contains((await document.GetTextAsync()).ToString(), "disable WRANGLER0003 // " + Title3);
+        StringAssert.Contains((await document.GetTextAsync()).ToString(), "disable WRANGLER0002 // " + Title3);
         Assert.IsEmpty(await PragmaTestHelper.GetDiagnosticsAsync(document));
     }
 
@@ -294,59 +294,59 @@ public sealed class PragmaSuppressionTests
             ?? throw new InvalidOperationException("No syntax root.");
         SyntaxTrivia directive = SyntaxFactory.Trivia(SyntaxFactory.PragmaWarningDirectiveTrivia(
             SyntaxFactory.Token(SyntaxKind.DisableKeyword),
-            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(SyntaxFactory.IdentifierName("WRANGLER0003")),
+            SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(SyntaxFactory.IdentifierName("WRANGLER0002")),
             isActive: true));
         SyntaxToken token = root.GetFirstToken();
         root = root.ReplaceToken(token, token.WithLeadingTrivia(
             directive, SyntaxFactory.Space, SyntaxFactory.Comment("/* note */"), SyntaxFactory.CarriageReturnLineFeed));
         document = document.WithSyntaxRoot(Formatter.Format(root, workspace));
-        StringAssert.Contains((await document.GetTextAsync()).ToString(), "disable WRANGLER0003 /* note */");
+        StringAssert.Contains((await document.GetTextAsync()).ToString(), "disable WRANGLER0002 /* note */");
         Diagnostic diagnostic = Assert.ContainsSingle(
-            item => item.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(document));
+            item => item.Id == "WRANGLER0004", await PragmaTestHelper.GetDiagnosticsAsync(document));
         Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
     [TestMethod]
-    [DataRow("#pragma warning disable WRANGLER0003", "#pragma warning disable WRANGLER0003 // " + Title3)]
-    [DataRow("#pragma warning disable WRANGLER0003  ", "#pragma warning disable WRANGLER0003 // " + Title3 + "  ")]
-    [DataRow("#pragma warning disable WRANGLER0003 //", "#pragma warning disable WRANGLER0003 // " + Title3)]
-    [DataRow("#pragma warning disable WRANGLER0003 // Justification: Tests null rejection.", "#pragma warning disable WRANGLER0003 // " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0003 // WRANGLER0003: Old title" + Reason, "#pragma warning disable WRANGLER0003 // " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0003 // WRANGLER0003:" + Reason, "#pragma warning disable WRANGLER0003 // " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002: " + Title2 + Reason,
-        "#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002: " + Title2 + "; WRANGLER0003: " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002:; WRANGLER0003: Wrong" + Reason,
-        "#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002: " + Title2 + "; WRANGLER0003: " + Title3 + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0003 //  WRANGLER0003: Wrong ; JUSTification \t:  Why; more #text  \r\nclass C { }\r\n",
-        "#pragma warning disable WRANGLER0003 //  " + Title3 + "; JUSTification \t:  Why; more #text  \r\nclass C { }\r\n")]
+    [DataRow("#pragma warning disable WRANGLER0002", "#pragma warning disable WRANGLER0002 // " + Title3)]
+    [DataRow("#pragma warning disable WRANGLER0002  ", "#pragma warning disable WRANGLER0002 // " + Title3 + "  ")]
+    [DataRow("#pragma warning disable WRANGLER0002 //", "#pragma warning disable WRANGLER0002 // " + Title3)]
+    [DataRow("#pragma warning disable WRANGLER0002 // Justification: Tests null rejection.", "#pragma warning disable WRANGLER0002 // " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0002 // WRANGLER0002: Old title" + Reason, "#pragma warning disable WRANGLER0002 // " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0002 // WRANGLER0002:" + Reason, "#pragma warning disable WRANGLER0002 // " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: " + Title2 + Reason,
+        "#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: " + Title2 + "; WRANGLER0002: " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001:; WRANGLER0002: Wrong" + Reason,
+        "#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: " + Title2 + "; WRANGLER0002: " + Title3 + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0002 //  WRANGLER0002: Wrong ; JUSTification \t:  Why; more #text  \r\nclass C { }\r\n",
+        "#pragma warning disable WRANGLER0002 //  " + Title3 + "; JUSTification \t:  Why; more #text  \r\nclass C { }\r\n")]
     public async Task TitleFix_ChangesOnlySafeTitleMetadata(string source, string expected)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> before = await PragmaTestHelper.GetDiagnosticsAsync(document);
-        Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == "WRANGLER0005", before);
+        Diagnostic diagnostic = Assert.ContainsSingle(item => item.Id == "WRANGLER0004", before);
         CodeAction action = Assert.ContainsSingle(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
         Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(expected, (await changed.GetTextAsync()).ToString());
         ImmutableArray<Diagnostic> after = await PragmaTestHelper.GetDiagnosticsAsync(changed);
-        Assert.DoesNotContain(diagnostic => diagnostic.Id == "WRANGLER0005", after);
+        Assert.DoesNotContain(diagnostic => diagnostic.Id == "WRANGLER0004", after);
         Assert.HasCount(
-            before.Count(diagnostic => diagnostic.Id == "WRANGLER0006"),
-            after.Where(diagnostic => diagnostic.Id == "WRANGLER0006"));
+            before.Count(diagnostic => diagnostic.Id == "WRANGLER0005"),
+            after.Where(diagnostic => diagnostic.Id == "WRANGLER0005"));
     }
 
     [TestMethod]
     [DataRow("#pragma warning disable")]
     [DataRow("#pragma warning disable CONTOSO001")]
-    [DataRow("#pragma warning disable WRANGLER0003 // Deliberate null-input test.")]
-    [DataRow("#pragma warning disable WRANGLER0003 // WRANGLER0003: Old title; preserve this thought" + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // An ambiguous comment" + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // WRANGLER0002: Old; WRANGLER0002: Again" + Reason)]
-    [DataRow("#pragma warning disable WRANGLER0002, WRANGLER0003 // Justification: A reason; WRANGLER0002: A misplaced title")]
+    [DataRow("#pragma warning disable WRANGLER0002 // Deliberate null-input test.")]
+    [DataRow("#pragma warning disable WRANGLER0002 // WRANGLER0002: Old title; preserve this thought" + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // An ambiguous comment" + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // WRANGLER0001: Old; WRANGLER0001: Again" + Reason)]
+    [DataRow("#pragma warning disable WRANGLER0001, WRANGLER0002 // Justification: A reason; WRANGLER0001: A misplaced title")]
     public async Task AmbiguousOrUnknownMetadata_HasNoAutomaticFix(string source)
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         Diagnostic diagnostic = Assert.ContainsSingle(
-            item => item.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(document));
+            item => item.Id == "WRANGLER0004", await PragmaTestHelper.GetDiagnosticsAsync(document));
         Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(document, diagnostic));
     }
 
@@ -445,9 +445,9 @@ public sealed class PragmaSuppressionTests
     public async Task StaleDiagnostic_DoesNotEditChangedDocument()
     {
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(
-            "#pragma warning disable WRANGLER0003", out Document document);
+            "#pragma warning disable WRANGLER0002", out Document document);
         Diagnostic diagnostic = Assert.ContainsSingle(
-            item => item.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(document));
+            item => item.Id == "WRANGLER0004", await PragmaTestHelper.GetDiagnosticsAsync(document));
         Document changed = document.WithText(SourceText.From("class Changed { }"));
         Assert.IsEmpty(await PragmaTestHelper.GetCodeActionsAsync(changed, diagnostic));
     }
@@ -455,10 +455,10 @@ public sealed class PragmaSuppressionTests
     [TestMethod]
     public async Task FixAll_HandlesAdjacentDirectivesWithoutOverlappingEdits()
     {
-        const string source = "#pragma warning disable WRANGLER0003\n#pragma warning disable WRANGLER0002\nclass C { }";
+        const string source = "#pragma warning disable WRANGLER0002\n#pragma warning disable WRANGLER0001\nclass C { }";
         using AdhocWorkspace workspace = PragmaTestHelper.CreateWorkspace(source, out Document document);
         ImmutableArray<Diagnostic> diagnostics = (await PragmaTestHelper.GetDiagnosticsAsync(document))
-            .Where(diagnostic => diagnostic.Id == "WRANGLER0005").ToImmutableArray();
+            .Where(diagnostic => diagnostic.Id == "WRANGLER0004").ToImmutableArray();
         var provider = new PragmaSuppressionCodeFixProvider();
         var context = new FixAllContext(
             document, provider, FixAllScope.Document, "Document suppressed rule titles",
@@ -467,10 +467,10 @@ public sealed class PragmaSuppressionTests
             ?? throw new InvalidOperationException("No Fix All action.");
         Document changed = await PragmaTestHelper.ApplyAsync(document, action);
         Assert.AreEqual(
-            $"#pragma warning disable WRANGLER0003 // {Title3}\n#pragma warning disable WRANGLER0002 // {Title2}\nclass C {{ }}",
+            $"#pragma warning disable WRANGLER0002 // {Title3}\n#pragma warning disable WRANGLER0001 // {Title2}\nclass C {{ }}",
             (await changed.GetTextAsync()).ToString());
         Assert.DoesNotContain(
-            diagnostic => diagnostic.Id == "WRANGLER0005", await PragmaTestHelper.GetDiagnosticsAsync(changed));
+            diagnostic => diagnostic.Id == "WRANGLER0004", await PragmaTestHelper.GetDiagnosticsAsync(changed));
     }
 
     private sealed class UnreadableCatalog : AdditionalText
@@ -512,8 +512,8 @@ internal static class PragmaTestHelper
     internal const string EnabledConfig = """
         root = true
         [*.cs]
+        dotnet_diagnostic.WRANGLER0004.severity = warning
         dotnet_diagnostic.WRANGLER0005.severity = warning
-        dotnet_diagnostic.WRANGLER0006.severity = warning
         """;
 
     internal static AdhocWorkspace CreateWorkspace(

@@ -7,17 +7,15 @@
 - name: Analyzer reference
   expanded: true
   items:
-    - name: WRANGLER0001 - Constant locals
+    - name: WRANGLER0001 - Explicit null handling
       href: rules/WRANGLER0001.md
-    - name: WRANGLER0002 - Explicit null handling
+    - name: WRANGLER0002 - Non-null contracts
       href: rules/WRANGLER0002.md
-    - name: WRANGLER0003 - Non-null contracts
+    - name: WRANGLER0003 - Assertions in tests
       href: rules/WRANGLER0003.md
-    - name: WRANGLER0004 - Assertions in tests
+    - name: WRANGLER0004 - Suppression titles
       href: rules/WRANGLER0004.md
-    - name: WRANGLER0005 - Suppression titles
+    - name: WRANGLER0005 - Suppression reasons
       href: rules/WRANGLER0005.md
-    - name: WRANGLER0006 - Suppression reasons
-      href: rules/WRANGLER0006.md
 - name: Maintaining the docs
   href: publishing.md

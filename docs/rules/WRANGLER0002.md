@@ -1,4 +1,4 @@
-# WRANGLER0002: Null-forgiving operator hides a possible null value
+# WRANGLER0002: Null-forgiving operator fabricates a non-null value
 
 [Analyzer catalog](../../README.md#analyzer-catalog) | [Configuration](../configuration.md) | [Suppressions](../suppressions.md)
 
@@ -6,47 +6,42 @@ Default severity: **Warning**. Code fix: **None**.
 
 ## Why this rule exists
 
-The null-forgiving operator (`!`) overrides the compiler's nullable analysis without changing the runtime value. It is not a null check.
-
-Only use `!` when you can prove the value is non-null and the compiler cannot, or when deliberately violating a contract such as a null-input test. These legitimate uses still receive diagnostics; document them with a [scoped suppression and a reason](../suppressions.md).
+`null!` and reference-type defaults such as `default(string)!` tell the compiler a null value is non-null. They move a possible `NullReferenceException` to a later, harder-to-diagnose location.
 
 ## Reported code
 
 ```csharp
-static int GetNameLength(string? name) => name!.Length;
+public sealed class Person
+{
+    public string Name { get; init; } = null!;
+}
 ```
 
 ## Preferred code
 
-If a missing name violates the method's contract, fail at the boundary:
+If callers must provide a name, make that requirement explicit:
 
 ```csharp
-static int GetNameLength(string? name)
+public sealed class Person
 {
-    if (name is null)
-    {
-        throw new ArgumentNullException(nameof(name));
-    }
-
-    return name.Length;
+    public required string Name { get; init; }
 }
 ```
 
-If null is a meaningful result instead, preserve that meaning with a nullable return type and `?.`. When a helper guarantees a value is non-null, express the guarantee through its nullable contract or attributes such as `[NotNullWhen]` and `[MemberNotNull]`.
+Alternatively, initialize the member with a real value in the constructor, validating it when needed. If missing data is valid, declare the member nullable.
 
-There is no automatic fix: a null check, conditional access, a throw, and a changed nullable contract have different behavior. Do not mechanically replace `!` with `?.` or an arbitrary default.
+`required` requires callers to initialize a member; it does not perform runtime null validation. Choose the contract that matches the domain.
 
-## Which null-forgiving rule applies
+Do not replace missing data with an arbitrary default just to silence the warning. An empty first name is not a valid universal default.
 
-The analyzer chooses one diagnostic for each null-forgiving expression:
+## Defaults and generic constraints
 
-Expression or context | Diagnostic
-----------------------|-----------
-`null!`, or a default known to be a reference type, including a reference-constrained generic | [WRANGLER0003](WRANGLER0003.md), including in tests.
-Other defaults, such as `default(int)!`, nullable value-type defaults, and unconstrained/`notnull` generic defaults | WRANGLER0002, including in tests.
-Other `!` expressions in recognized test classes, where framework-specific advice is applicable | [WRANGLER0004](WRANGLER0004.md).
-Other `!` expressions | WRANGLER0002.
+This rule takes precedence for `null!` and defaults known to be reference types, including reference-constrained generics.
 
-Referencing a test framework or naming a class `*Tests` is not enough to qualify for WRANGLER0004. Its [framework and async requirements](WRANGLER0004.md#framework-compatibility) determine whether the advice applies.
+Defaults of value types, including nullable value types, and generics not known to be reference types receive [WRANGLER0001](WRANGLER0001.md) instead. For example, `default(int)!` does not fabricate a null reference, and a `notnull` constraint alone does not establish that a generic type is a reference type.
 
-Prefix logical negation (`!condition`) and null-conditional access (`value?.Member`) are not null-forgiving operators.
+## Intentional null-input tests
+
+Deliberately passing null to verify argument validation is valid. These tests still receive WRANGLER0002; the analyzer does not automatically exempt exception assertions or negative tests.
+
+Use a [scoped suppression with a reason](../suppressions.md#example-testing-a-null-argument-contract) to document the intentional contract violation.

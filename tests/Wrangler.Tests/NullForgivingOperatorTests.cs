@@ -65,11 +65,11 @@ public sealed class NullForgivingOperatorTests
     }
 
     [TestMethod]
-    [DataRow("where T : struct", "WRANGLER0002")]
-    [DataRow("where T : notnull", "WRANGLER0002")]
-    [DataRow("", "WRANGLER0002")]
-    [DataRow("where T : class", "WRANGLER0003")]
-    [DataRow("where T : System.Exception", "WRANGLER0003")]
+    [DataRow("where T : struct", "WRANGLER0001")]
+    [DataRow("where T : notnull", "WRANGLER0001")]
+    [DataRow("", "WRANGLER0001")]
+    [DataRow("where T : class", "WRANGLER0002")]
+    [DataRow("where T : System.Exception", "WRANGLER0002")]
     public async Task ForgivingGenericDefault_UsesTypeConstraints(string constraint, string expectedId)
     {
         string source = $$"""
@@ -391,10 +391,10 @@ public sealed class NullForgivingOperatorTests
     }
 
     [TestMethod]
-    [DataRow(TUnitCore, "TUnit.Core.Test", "WRANGLER0002", "")]
-    [DataRow(TUnitFramework, "TUnit.Core.Test", "WRANGLER0004", "await Assert.That(Name).IsNotNull()")]
-    [DataRow(XunitCore, "Xunit.Fact", "WRANGLER0002", "")]
-    [DataRow(XunitFramework, "Xunit.Fact", "WRANGLER0004", "Assert.NotNull(Name)")]
+    [DataRow(TUnitCore, "TUnit.Core.Test", "WRANGLER0001", "")]
+    [DataRow(TUnitFramework, "TUnit.Core.Test", "WRANGLER0003", "await Assert.That(Name).IsNotNull()")]
+    [DataRow(XunitCore, "Xunit.Fact", "WRANGLER0001", "")]
+    [DataRow(XunitFramework, "Xunit.Fact", "WRANGLER0003", "Assert.NotNull(Name)")]
     public async Task ForgivingInTestClass_RequiresAssertionsReference(
         string framework,
         string testAttribute,
@@ -555,9 +555,9 @@ public sealed class NullForgivingOperatorTests
                 [Fact]
                 public void ConstructorRejectsNull()
                 {
-            #pragma warning disable WRANGLER0003 // Null input intentionally exercises argument validation.
+            #pragma warning disable WRANGLER0002 // Null input intentionally exercises argument validation.
                     Assert.Throws<ArgumentNullException>(() => new Person(null!));
-            #pragma warning restore WRANGLER0003
+            #pragma warning restore WRANGLER0002
                     Assert.Throws<ArgumentNullException>(() => new Person(null!));
                 }
 

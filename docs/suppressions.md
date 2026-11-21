@@ -15,20 +15,20 @@ This xUnit test deliberately violates a non-null constructor contract:
 public void ConstructorRejectsNullName()
 {
     // Justification: Null input intentionally exercises argument validation.
-#pragma warning disable WRANGLER0003 // Null-forgiving operator fabricates a non-null value
+#pragma warning disable WRANGLER0002 // Null-forgiving operator fabricates a non-null value
     Assert.Throws<ArgumentNullException>(() => new Person(null!));
-#pragma warning restore WRANGLER0003
+#pragma warning restore WRANGLER0002
 }
 ```
 
-`null!` receives WRANGLER0003 even in a test. Other intentional uses may receive WRANGLER0002 or WRANGLER0004; suppress the rule that was actually reported rather than all three.
+`null!` receives WRANGLER0002 even in a test. Other intentional uses may receive WRANGLER0001 or WRANGLER0003; suppress the rule that was actually reported rather than all three.
 
 This format also satisfies both optional pragma policies:
 
 Policy | What it checks
 -------|---------------
-[WRANGLER0005](rules/WRANGLER0005.md) | Explicit IDs and each rule's title in a same-line comment.
-[WRANGLER0006](rules/WRANGLER0006.md) | A nonempty `Justification:` field on the pragma line or the immediately preceding standalone `//` line.
+[WRANGLER0004](rules/WRANGLER0004.md) | Explicit IDs and each rule's title in a same-line comment.
+[WRANGLER0005](rules/WRANGLER0005.md) | A nonempty `Justification:` field on the pragma line or the immediately preceding standalone `//` line.
 
 A title identifies the rule; a justification explains this exception. One is not a substitute for the other. These policies check documentation, not the honesty or quality of the reason.
 
@@ -36,4 +36,4 @@ A title identifies the rule; a justification explains this exception. One is not
 
 The pragma policies are disabled by default and can be [enabled independently](configuration.md#enable-the-optional-pragma-policies). They skip inactive/generated code and do not inspect restore comments, enforce suppression pairing, or inspect `SuppressMessage` attributes.
 
-Normal severity settings and scoped pragma suppression remain supported for WRANGLER0005 and WRANGLER0006 themselves. A violation on a disable directive is reported at its `disable` keyword: that directive does not hide its own violation unless an earlier suppression already disabled the policy. This is a configurable guardrail, not a tamper-proof boundary.
+Normal severity settings and scoped pragma suppression remain supported for WRANGLER0004 and WRANGLER0005 themselves. A violation on a disable directive is reported at its `disable` keyword: that directive does not hide its own violation unless an earlier suppression already disabled the policy. This is a configurable guardrail, not a tamper-proof boundary.

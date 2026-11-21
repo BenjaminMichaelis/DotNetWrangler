@@ -26,7 +26,7 @@ Follow this workflow when adding a rule or materially changing one. [`AGENTS.md`
 - Message format arguments should name the specific symbol or expression so the diagnostic is actionable.
 - Do not add `WellKnownDiagnosticTags.NotConfigurable` or a custom on/off switch; standard `dotnet_diagnostic.<ID>.severity` and pragmas must work.
 - Add the rule to `AnalyzerReleases.Unshipped.md` with matching category, severity, and notes.
-- When adding an analyzer class, include its descriptors in `PragmaTitleCatalog` so WRANGLER0005 verifies its titles. The descriptor-discovery regression must cover every analyzer in the assembly.
+- When adding an analyzer class, include its descriptors in `PragmaTitleCatalog` so WRANGLER0004 verifies its titles. The descriptor-discovery regression must cover every analyzer in the assembly.
 
 ## 4. Implement the analyzer
 
