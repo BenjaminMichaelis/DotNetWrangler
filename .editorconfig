@@ -21,7 +21,6 @@ indent_size = 2
 
 # C# files
 [*.cs]
-dotnet_diagnostic.RS1015.severity = warning
 
 #### Core EditorConfig Options ####
 
@@ -387,3 +386,6 @@ dotnet_naming_style.s_camelcase.required_prefix = s_
 dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator =
 dotnet_naming_style.s_camelcase.capitalization = camel_case
+
+[*.cs]
+dotnet_diagnostic.RS1015.severity = warning
