@@ -4,11 +4,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.12.0" />
+    <!-- Keep shipped assemblies compatible with the .NET 10 / Roslyn 5.0 compiler host. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="MSTest.TestAdapter" Version="4.5.3" />
     <PackageVersion Include="MSTest.TestFramework" Version="4.5.3" />
-    <PackageVersion Include="System.Composition.AttributedModel" Version="10.0.10" />
+    <PackageVersion Include="System.Composition.AttributedModel" Version="9.0.0" />
   </ItemGroup>
 </Project>

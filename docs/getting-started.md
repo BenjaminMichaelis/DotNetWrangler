@@ -50,7 +50,21 @@ Test projects receive diagnostics too. That's intended: [WRANGLER0003](rules/WRA
 
 ### Compiler compatibility
 
-Wrangler runs in your SDK's or IDE's Roslyn compiler. If you see `CS9057`, the compiler is too old for the installed package. Select a newer [.NET SDK](https://dotnet.microsoft.com/download) for builds or update your IDE for live analysis. You don't need to change your project's target framework.
+Wrangler's analyzers and code fixes target .NET Standard 2.0 and reference **Roslyn 5.0.0**. The supported compiler baseline is:
+
+Host | Minimum version
+-----|----------------
+.NET SDK (command-line builds) | 10.0.100
+Visual Studio (live analysis and code fixes) | Visual Studio 2026, version 18.0
+Other editors | A Roslyn 5.0-compatible host, including Workspaces support for code fixes
+
+See Microsoft's [Roslyn/Visual Studio version reference](https://learn.microsoft.com/visualstudio/extensibility/roslyn-version-support?view=visualstudio). CI runs analyzer and code-fix tests against Roslyn 5.0 and verifies that the packaged analyzer reports diagnostics in .NET 10 and .NET 11 compiler hosts. Other editor integrations are not tested by this repository.
+
+These are **compiler-host requirements**, not target-framework requirements. For example, a `net8.0` project can use Wrangler when built with a supported SDK. SDKs older than .NET 10 and Visual Studio 2022 are outside the supported host baseline.
+
+If you see `CS9057`, the compiler is too old for the installed package. Select a newer [.NET SDK](https://dotnet.microsoft.com/download) for builds or update your IDE for live analysis. You don't need to change your project's target framework. A consumer's `global.json` controls SDK selection; this repository's .NET 11 SDK pin is only for building Wrangler itself.
+
+This baseline applies to packages built from the current source. Previously published packages may reference newer Roslyn versions; lowering the dependency here does not change those packages.
 
 WRANGLER0001 through WRANGLER0003 are warnings by default. The two pragma policies are disabled until you [enable them explicitly](configuration.md#enable-the-optional-pragma-policies).
 
