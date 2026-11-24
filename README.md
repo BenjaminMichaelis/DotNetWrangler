@@ -78,11 +78,15 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 
 ## Build and test
 
+Repository development requires the .NET 11 SDK selected by `global.json` and the .NET 8 runtime for tests. Shipped analyzers and code fixes use the Roslyn 5.0 API baseline so consumers can use .NET 10 compiler hosts; see [compiler compatibility](docs/getting-started.md#compiler-compatibility).
+
 ```shell
 dotnet test DotNetWrangler.slnx -warnaserror
 ```
 
 CI treats compiler, enabled analyzer, and MSBuild warnings as errors during restore, build, test, and pack. The repository enables RS1015 to require diagnostic help links; warnings-as-errors does not enable other disabled rules.
+
+Roslyn minor/major upgrades and composition major upgrades are excluded from routine Dependabot updates because they can raise the minimum host version. Change the baseline deliberately, together with compatibility documentation and compiler-host checks.
 
 ## Release
 
@@ -96,6 +100,14 @@ Verify a package locally before releasing:
 ```shell
 dotnet pack src/Wrangler.Package/Wrangler.Package.csproj -c Release -o artifacts -p:Version=0.0.0-local
 ```
+
+With the .NET 10.0.1xx and .NET 11.0.1xx SDKs installed, verify the package in both compiler hosts:
+
+```powershell
+pwsh -File .github\scripts\verify-analyzer-package.ps1 -PackageDirectory artifacts -PackageVersion 0.0.0-local
+```
+
+The script selects SDKs independently of this repository's `global.json` and cleans up its temporary consumers. Pass `-SdkVersions` when invoking it from PowerShell to select other installed SDK feature bands.
 
 See [maintaining the documentation](docs/publishing.md) to build, preview, customize, and publish the DocFX site.
 
