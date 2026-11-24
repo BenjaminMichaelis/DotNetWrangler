@@ -71,7 +71,7 @@ jobs:
           if-no-files-found: ignore
       - name: Create failed-test playlist
         if: failure() && hashFiles('TestResults/*.trx') != ''
-        uses: BenjaminMichaelis/trx-to-vsplaylist@86a717b0e00d014347c0f16759127ae012154be7 # v4
+        uses: BenjaminMichaelis/trx-to-vsplaylist@e8d6bf4721d96b95a5de0a4c0b302c09be97abaa # v5
         # The action's pre step always runs and fails installing other SDK channels on Windows,
         # so reuse the installed SDK and roll the net10.0 tool forward onto it.
         env:
