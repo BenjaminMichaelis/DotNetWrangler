@@ -15,6 +15,7 @@ dotnet_diagnostic.WRANGLER0002.severity = warning
 dotnet_diagnostic.WRANGLER0003.severity = warning
 dotnet_diagnostic.WRANGLER0004.severity = none
 dotnet_diagnostic.WRANGLER0005.severity = none
+dotnet_diagnostic.WRANGLER0006.severity = none
 ```
 
 Add settings to your existing `.editorconfig`, or create one at the appropriate directory level.
@@ -45,6 +46,15 @@ These policies are independent:
 - [WRANGLER0005](rules/WRANGLER0005.md) requires an explicit, nonempty `Justification:` field.
 
 Either can be enabled without the other. See [suppressions](suppressions.md) for an example that satisfies both.
+
+## Enable the optional SaveChanges interceptor policy
+
+```ini
+[*.cs]
+dotnet_diagnostic.WRANGLER0006.severity = warning
+```
+
+[WRANGLER0006](rules/WRANGLER0006.md) reports a custom EF Core SaveChanges interceptor callback when its sync/async counterpart is missing. It checks implementation presence, not equivalent behavior or which save paths an application uses. Intentional one-sided implementations can use a scoped suppression.
 
 ## Scope a setting
 

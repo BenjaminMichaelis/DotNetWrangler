@@ -57,6 +57,12 @@ These are intentional product decisions, not false positives to silently exempt:
 - A justification is an explicit, nonempty `Justification:` field on the pragma line or the immediately preceding standalone `//` line. Do not invent reasons, enforce their quality, or replace ambiguous free-text comments.
 - Report at the `disable` keyword, not the end token: that token already uses the new suppression state. Skip inactive/generated and incomplete directives; restoration pairing and `SuppressMessage` attributes are separate scope.
 
+## SaveChanges interceptor policy
+
+- WRANGLER0006 is an opt-in structural rule: require the sync/async counterpart of a custom canonical EF Core SaveChanges callback. It does not prove that both execution paths are used or that callback bodies are equivalent.
+- Count inherited custom implementations and explicit interface implementations, but not EF Core's default `SaveChangesInterceptor` callbacks. Only check known pairs present in the referenced API; do not infer pairs from naming alone or require before/after callbacks together.
+- An explicitly implemented callback counts even when it throws or delegates to the base method. Intentional one-sided implementations still report and can use scoped suppression. Do not analyze bodies or generate a counterpart automatically.
+
 ## Tests and verification
 
 Use the existing test harness and add focused regression cases for changed behavior. Test framework support in analyzed snippets does not require migrating this repository's own MSTest suite.

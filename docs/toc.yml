@@ -17,5 +17,7 @@
       href: rules/WRANGLER0004.md
     - name: WRANGLER0005 - Suppression reasons
       href: rules/WRANGLER0005.md
+    - name: WRANGLER0006 - SaveChanges callback pairs
+      href: rules/WRANGLER0006.md
 - name: Maintaining the docs
   href: publishing.md

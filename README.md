@@ -30,6 +30,7 @@ ID | Description | Default severity | Code fix
 [WRANGLER0003](docs/rules/WRANGLER0003.md) | Prefer a framework-specific not-null assertion in tests. | Warning | No
 [WRANGLER0004](docs/rules/WRANGLER0004.md) | Document explicit pragma suppression IDs and rule titles. | Disabled (opt-in warning) | When titles are available
 [WRANGLER0005](docs/rules/WRANGLER0005.md) | Require an explicit justification for pragma suppressions. | Disabled (opt-in warning) | No
+[WRANGLER0006](docs/rules/WRANGLER0006.md) | Implement sync/async counterparts for EF Core SaveChanges interceptor callbacks. | Disabled (opt-in warning) | No
 
 The three null-forgiving rules are alternatives, not three diagnostics on every `!`. [WRANGLER0001](docs/rules/WRANGLER0001.md#which-null-forgiving-rule-applies) explains which rule takes precedence. Valid uses can still receive a diagnostic; use a [scoped suppression with a reason](docs/suppressions.md) for intentional exceptions.
 
@@ -55,9 +56,13 @@ The three null-forgiving rules are alternatives, not three diagnostics on every 
 
 [Justify warning suppressions](docs/rules/WRANGLER0005.md): accepted justification locations, field syntax, and policy scope.
 
+### WRANGLER0006
+
+[Implement both synchronous and asynchronous SaveChanges interceptor callbacks](docs/rules/WRANGLER0006.md): an opt-in structural policy for paired implementations, including inherited callbacks and intentional one-sided exceptions.
+
 ## Configuration
 
-Every rule supports standard `.editorconfig` severity settings, including `none`, and scoped pragma suppression. WRANGLER0004 and WRANGLER0005 are independent opt-in policies.
+Every rule supports standard `.editorconfig` severity settings, including `none`, and scoped pragma suppression. WRANGLER0004, WRANGLER0005, and WRANGLER0006 are independent opt-in policies.
 
 See [configuration examples](docs/configuration.md) and [suppression guidance](docs/suppressions.md).
 
@@ -68,6 +73,7 @@ See [configuration examples](docs/configuration.md) and [suppression guidance](d
 - The .NET SDK's IDE analyzers report `!` that the compiler doesn't need and offer to remove it.
 - StyleCop [SA1404](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1404.md) requires justifications on `SuppressMessage` attributes, not pragma title/reason comments. The related pragma proposal [DotNetAnalyzers/StyleCopAnalyzers#3403](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/3403) motivated similar discussion.
 - The SDK's [IDE0079](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0079?WT.mc_id=8B97120A00B57354) finds unnecessary suppressions; WRANGLER0004/WRANGLER0005 document the suppressions that remain.
+- General async rules such as the SDK's [CA2016](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2016) check cancellation propagation, not EF Core callback coverage. WRANGLER0006 checks only SaveChanges sync/async implementation presence; [Microsoft's interceptor guidance](https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/interceptors#savechanges-interception) permits intentional one-sided implementations.
 
 ## Projects
 
