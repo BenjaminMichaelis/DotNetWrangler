@@ -24,7 +24,7 @@ internal sealed class PragmaTitleCatalog(
             StringComparer.Ordinal);
         IEnumerable<DiagnosticDescriptor> descriptors = new NullForgivingOperatorAnalyzer().SupportedDiagnostics
             .Concat(new PragmaSuppressionAnalyzer().SupportedDiagnostics)
-            .Concat(new SaveChangesInterceptorAnalyzer().SupportedDiagnostics);
+            .Concat(new SingletonInterceptorAnalyzer().SupportedDiagnostics);
         foreach (DiagnosticDescriptor descriptor in descriptors)
         {
             titles.Add(descriptor.Id, descriptor.Title.ToString(CultureInfo.InvariantCulture));

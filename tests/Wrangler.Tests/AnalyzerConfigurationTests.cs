@@ -26,9 +26,9 @@ public sealed class AnalyzerConfigurationTests
     [DataRow("WRANGLER0005", "none")]
     [DataRow("WRANGLER0005", "warning")]
     [DataRow("WRANGLER0005", "error")]
-    [DataRow("WRANGLER0006", "none")]
-    [DataRow("WRANGLER0006", "warning")]
-    [DataRow("WRANGLER0006", "error")]
+    [DataRow("WRANGLER0007", "none")]
+    [DataRow("WRANGLER0007", "warning")]
+    [DataRow("WRANGLER0007", "error")]
     public async Task EditorConfig_ConfiguresEachRuleIndependently(string ruleId, string severity)
     {
         const string source = """
@@ -42,9 +42,11 @@ public sealed class AnalyzerConfigurationTests
 
             }
 
-            class SavePolicy : Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesInterceptor
+            class SingletonPolicy : Microsoft.EntityFrameworkCore.Diagnostics.ISingletonInterceptor { }
+            class Context : Microsoft.EntityFrameworkCore.DbContext
             {
-                public override int SavedChanges(Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesCompletedEventData data, int result) => result;
+                protected override void OnConfiguring(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder builder)
+                    => builder.AddInterceptors(new SingletonPolicy());
             }
 
             class PersonTests
@@ -58,7 +60,7 @@ public sealed class AnalyzerConfigurationTests
                 }
             }
             """;
-        string[] ruleIds = ["WRANGLER0001", "WRANGLER0002", "WRANGLER0003", "WRANGLER0004", "WRANGLER0005", "WRANGLER0006"];
+        string[] ruleIds = ["WRANGLER0001", "WRANGLER0002", "WRANGLER0003", "WRANGLER0004", "WRANGLER0005", "WRANGLER0007"];
         string editorConfig = "root = true\n\n[*.cs]\n" + string.Join(
             "\n",
             ruleIds.Select(id => $"dotnet_diagnostic.{id}.severity = {(id == ruleId ? severity : "warning")}"));
@@ -70,7 +72,8 @@ public sealed class AnalyzerConfigurationTests
             .Where(path => Path.GetDirectoryName(path) == runtimeDirectory)
             .Select(path => MetadataReference.CreateFromFile(path))
             .Append(MetadataReference.CreateFromFile(typeof(TestMethodAttribute).Assembly.Location))
-            .Append(SaveChangesTestHelper.Reference);
+            .Append(SingletonTestHelper.DependencyInjectionReference)
+            .Append(SingletonTestHelper.Reference);
 
         using var workspace = new AdhocWorkspace();
         ProjectId projectId = ProjectId.CreateNewId();
@@ -106,7 +109,7 @@ public sealed class AnalyzerConfigurationTests
 
         ImmutableArray<Diagnostic> diagnostics = await compilation
             .WithAnalyzers(
-                [new NullForgivingOperatorAnalyzer(), new PragmaSuppressionAnalyzer(), new SaveChangesInterceptorAnalyzer()],
+                [new NullForgivingOperatorAnalyzer(), new PragmaSuppressionAnalyzer(), new SingletonInterceptorAnalyzer()],
                 project.AnalyzerOptions)
             .GetAnalyzerDiagnosticsAsync();
 
@@ -128,7 +131,7 @@ public sealed class AnalyzerConfigurationTests
                 "WRANGLER0002" => "null!",
                 "WRANGLER0003" => "Name!",
                 "WRANGLER0004" or "WRANGLER0005" => "disable",
-                "WRANGLER0006" => "SavedChanges",
+                "WRANGLER0007" => "new SingletonPolicy()",
                 _ => throw new InvalidOperationException($"Unexpected diagnostic ID '{expectedId}'."),
             };
             var expectedSpan = new TextSpan(source.IndexOf(construct, StringComparison.Ordinal), construct.Length);

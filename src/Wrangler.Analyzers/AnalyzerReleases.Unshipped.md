@@ -7,4 +7,4 @@ WRANGLER0002 | Reliability | Warning | `null!` or `default!` fabricates a non-nu
 WRANGLER0003 | Reliability | Warning | Use a not-null assertion instead of the null-forgiving operator in tests.
 WRANGLER0004 | Maintainability | Disabled | Document suppressed diagnostic IDs and titles.
 WRANGLER0005 | Maintainability | Disabled | Justify warning suppressions.
-WRANGLER0006 | Usage | Disabled | Implement both synchronous and asynchronous SaveChanges interceptor callbacks.
+WRANGLER0007 | Performance | Warning | Reuse singleton interceptor instances during per-context EF Core options configuration.

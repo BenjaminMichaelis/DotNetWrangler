@@ -15,7 +15,7 @@ dotnet_diagnostic.WRANGLER0002.severity = warning
 dotnet_diagnostic.WRANGLER0003.severity = warning
 dotnet_diagnostic.WRANGLER0004.severity = none
 dotnet_diagnostic.WRANGLER0005.severity = none
-dotnet_diagnostic.WRANGLER0006.severity = none
+dotnet_diagnostic.WRANGLER0007.severity = warning
 ```
 
 Add settings to your existing `.editorconfig`, or create one at the appropriate directory level.
@@ -47,14 +47,18 @@ These policies are independent:
 
 Either can be enabled without the other. See [suppressions](suppressions.md) for an example that satisfies both.
 
-## Enable the optional SaveChanges interceptor policy
+## Singleton interceptor reuse
+
+[WRANGLER0007](rules/WRANGLER0007.md) is enabled by default. It reports direct allocations of EF Core singleton interceptors in recognized per-context configuration. Cached instances, ordinary non-singleton interceptors, and one-time standalone options construction are outside the rule's scope.
+
+Like every rule, it can be configured independently:
 
 ```ini
 [*.cs]
-dotnet_diagnostic.WRANGLER0006.severity = warning
+dotnet_diagnostic.WRANGLER0007.severity = error
 ```
 
-[WRANGLER0006](rules/WRANGLER0006.md) reports a custom EF Core SaveChanges interceptor callback when its sync/async counterpart is missing. It checks implementation presence, not equivalent behavior or which save paths an application uses. Intentional one-sided implementations can use a scoped suppression.
+The withdrawn WRANGLER0006 proposal is not emitted; its ID is reserved.
 
 ## Scope a setting
 
