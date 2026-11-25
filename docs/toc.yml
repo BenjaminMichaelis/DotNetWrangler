@@ -17,5 +17,7 @@
       href: rules/WRANGLER0004.md
     - name: WRANGLER0005 - Suppression reasons
       href: rules/WRANGLER0005.md
+    - name: WRANGLER0007 - Singleton interceptor reuse
+      href: rules/WRANGLER0007.md
 - name: Maintaining the docs
   href: publishing.md

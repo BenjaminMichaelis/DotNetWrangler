@@ -15,6 +15,7 @@ dotnet_diagnostic.WRANGLER0002.severity = warning
 dotnet_diagnostic.WRANGLER0003.severity = warning
 dotnet_diagnostic.WRANGLER0004.severity = none
 dotnet_diagnostic.WRANGLER0005.severity = none
+dotnet_diagnostic.WRANGLER0007.severity = warning
 ```
 
 Add settings to your existing `.editorconfig`, or create one at the appropriate directory level.
@@ -45,6 +46,19 @@ These policies are independent:
 - [WRANGLER0005](rules/WRANGLER0005.md) requires an explicit, nonempty `Justification:` field.
 
 Either can be enabled without the other. See [suppressions](suppressions.md) for an example that satisfies both.
+
+## Singleton interceptor reuse
+
+[WRANGLER0007](rules/WRANGLER0007.md) is enabled by default. It reports direct allocations of EF Core singleton interceptors in recognized per-context configuration. Cached instances, ordinary non-singleton interceptors, and one-time standalone options construction are outside the rule's scope.
+
+Like every rule, it can be configured independently:
+
+```ini
+[*.cs]
+dotnet_diagnostic.WRANGLER0007.severity = error
+```
+
+The withdrawn WRANGLER0006 proposal is not emitted; its ID is reserved.
 
 ## Scope a setting
 

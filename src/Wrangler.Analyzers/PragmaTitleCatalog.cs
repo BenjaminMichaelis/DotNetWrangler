@@ -23,7 +23,8 @@ internal sealed class PragmaTitleCatalog(
         ImmutableDictionary<string, string>.Builder titles = ImmutableDictionary.CreateBuilder<string, string>(
             StringComparer.Ordinal);
         IEnumerable<DiagnosticDescriptor> descriptors = new NullForgivingOperatorAnalyzer().SupportedDiagnostics
-            .Concat(new PragmaSuppressionAnalyzer().SupportedDiagnostics);
+            .Concat(new PragmaSuppressionAnalyzer().SupportedDiagnostics)
+            .Concat(new SingletonInterceptorAnalyzer().SupportedDiagnostics);
         foreach (DiagnosticDescriptor descriptor in descriptors)
         {
             titles.Add(descriptor.Id, descriptor.Title.ToString(CultureInfo.InvariantCulture));
